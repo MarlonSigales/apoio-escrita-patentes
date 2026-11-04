@@ -145,7 +145,10 @@ function componentesDoTexto(texto) {
         let ws = m[1].replace(/[“”"]/g, '').trim().split(/\s+/).slice(-5);
         while (ws.length > 1 && /^(no|na|do|da|bloco|via)$/i.test(ws[ws.length - 1])) ws.pop();
         if (ws.length > 2 && /^(no|na)$/i.test(ws[ws.length - 2])) ws = ws.slice(0, -2);
+        const art = ws.slice(0, -1).map(w => /^(um|uma|o|a|os|as)$/i.test(w)).lastIndexOf(true);
+        if (art >= 0) ws = ws.slice(art + 1);
         while (ws.length > 1 && vazias.test(ws[0])) ws.shift();
+        while (ws.length > 2 && /(am|em|ou|iu|ava|ia)$/i.test(ws[0]) && !/^(sistema|bem|item)$/i.test(ws[0])) ws.shift();
         let nome = ws.join(' ');
         if (!out.has(num) && nome.length > 2) out.set(num, nome);
     }

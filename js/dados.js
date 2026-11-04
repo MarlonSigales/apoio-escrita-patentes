@@ -48,8 +48,12 @@ function pedidoVazio() {
             depositantes: '',
             executadas: {},      // id da busca → { feita, n, triados, data }
             resultados: [],      // { id, num, titulo, base, link, relevancia, lido, nota, carac: {} }
-            md: ''
+            md: '',
+            retorno: '',         // texto colado do retorno da busca (relatório da IA, PDF, planilha…)
+            registroColado: [],  // { id, base, consulta, n, triados } lidos do retorno colado
+            notaRetorno: ''      // conclusão/resumo lido do retorno colado
         },
+        autoFeito: {},           // campos já pré-preenchidos uma vez (não repreenche o que o aluno apagou)
         relatorio: { campo: '', fundamentos: '', problemaSolucao: '', desenhos: '', descricao: '', exemplos: '' },
         reivindicacoes: [],      // { id, dep: null | número da reivindicação, texto }
         desenhos: [],            // { id, legenda, img: id no IndexedDB }
@@ -108,6 +112,7 @@ function normalizarPedido(p) {
     p.universidade.inventores = (p.universidade.inventores || []).map(i => Object.assign(inventorVazio(), i));
     p.universidade.colaboradores = (p.universidade.colaboradores || []).map(i => Object.assign(inventorVazio(), { inventor: false }, i));
     if (!Array.isArray(p.universidade.areasAbrangidas)) p.universidade.areasAbrangidas = [];
+    p.busca.registroColado = (p.busca.registroColado || []).map(r => Object.assign({ id: uid(), base: '', consulta: '', n: '', triados: '' }, r));
     return p;
 }
 
@@ -155,6 +160,28 @@ const Imagens = {
         return (this._urls[id] = URL.createObjectURL(b));
     }
 };
+
+// ---------------------------------------------------------------- caminhos de dados ("a.b.#id.c")
+function partes(c) { return String(c).split('.'); }
+function lerCaminho(obj, c) {
+    let o = obj;
+    for (const k of partes(c)) {
+        if (o == null) return '';
+        o = k.startsWith('#') && Array.isArray(o) ? o.find(x => x.id === k.slice(1)) : o[k];
+    }
+    return o ?? '';
+}
+function gravarCaminho(obj, c, v) {
+    const ks = partes(c);
+    let o = obj;
+    for (let i = 0; i < ks.length - 1; i++) {
+        const k = ks[i];
+        let prox = k.startsWith('#') && Array.isArray(o) ? o.find(x => x.id === k.slice(1)) : o[k];
+        if (prox == null) { prox = {}; o[k] = prox; }
+        o = prox;
+    }
+    o[ks[ks.length - 1]] = v;
+}
 
 // ---------------------------------------------------------------- consultas úteis
 function numerosReferencia(p) { return p.ficha.componentes.map(c => c.num).filter(Boolean); }

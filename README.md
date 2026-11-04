@@ -11,12 +11,27 @@ local, com `python3 -m http.server`.
 
 1. **Jogo de missões.** Cada etapa tem missões que dão XP. O XP sobe o nível, de Curioso(a) até Inventor(a) completo(a), e os marcos dão medalhas.
    O XP é calculado do próprio pedido: se você apagar um texto, perde os pontos.
-2. **O máximo pré-preenchido.** Uma ficha curta da invenção (problema, solução e componentes numerados) alimenta as buscas, a
-   classificação, o relatório, as reivindicações, o resumo e os formulários da universidade. Os rascunhos (✨) só preenchem o que está vazio.
+2. **Começa pelo resumo e pelas reivindicações.** São as primeiras etapas depois do "Entenda". O texto delas pré-preenche, em cadeia:
+   - a ficha (campo, solução, componentes numerados, vantagens, aplicações);
+   - os termos e as classes da busca;
+   - os desenhos (quantas figuras há e as legendas);
+   - o relatório (os fundamentos são escritos depois que o retorno da busca é colado);
+   - os formulários da universidade.
+
+   Tudo isso só preenche o que está vazio e cada campo uma única vez: se o aluno apagar, o app não preenche de novo.
 3. **Caderno de fontes, como o NotebookLM.** Você junta TCC, artigos e relatórios (.docx, .txt, .md ou texto colado). O app resume cada
    fonte, responde perguntas com trechos citados [1], [2]… e insere o trecho no campo em edição. Há também um pacote para IA:
    você copia o pedido, cola numa IA e cola a resposta de volta.
-4. **Busca de anterioridade a partir do `.md`.** Você importa o prompt padrão de busca (`docs/prompt-busca-anterioridade.md`, preenchido)
+4. **Busca de anterioridade: primeiro o prompt e o retorno colado, depois o que for à mão.** A etapa segue esta ordem:
+   1. Termos.
+   2. **Prompt gerado** para uma IA com navegador. O prompt manda a IA parar e pedir ao usuário que resolva CAPTCHAs e logins manualmente.
+   3. **Retorno da busca colado.** O app lê tabelas em Markdown, texto de PDF e linhas como "Sensor de pressão / 1843" debaixo do nome da base.
+      Daí saem as contagens por base, os documentos com relevância e link, a conclusão e se houve anterioridades.
+      Tudo isso vai direto para o **Formulário de Busca de Anterioridade**.
+   4. Documentos e quadro comparativo, com as características tiradas das reivindicações.
+   5. Buscas à mão, só para o que faltar.
+
+   **Importar o `.md`:** Você importa o prompt padrão de busca (`docs/prompt-busca-anterioridade.md`, preenchido)
    ou outro texto parecido. O app lê o título, o objeto, o problema, a solução, as classes, as famílias de termos, os depositantes e as datas de divulgação.
    Com isso, gera as estratégias A–G para INPI (pePI), Google Patents, Espacenet, PATENTSCOPE, USPTO, Google Acadêmico e SciELO.
    Cada estratégia tem a sequência pronta para copiar, um link e o registro de resultados. O app também gera de volta o prompt `.md` preenchido, que diz
@@ -51,7 +66,7 @@ local, com `python3 -m http.server`.
 - Tudo fica **no navegador**: o texto no `localStorage` e as figuras no IndexedDB. Nada vai para um servidor.
 - O ZIP final leva os 8 documentos, o `pedido.json`, as imagens e o prompt `.md`. Para continuar o pedido, abra o ZIP em "Abrir pedido".
 - O CPF, o endereço e o telefone dos inventores entram só nos formulários da universidade. **Não publique o ZIP** nem cole esses dados numa IA.
-- Os exemplos usam inventores fictícios.
+- O exemplo é o sistema de monitoramento de pressão para circuitos pneumáticos, com o retorno da busca colado do formulário. Os inventores do exemplo são fictícios.
 
 ## Estrutura do código
 
@@ -66,7 +81,8 @@ js/fontes.js          caderno de fontes, leitura de .docx, pedido existente, pac
 js/redacao.js         rascunhos de cada parte e verificações das regras do INPI
 js/documentos.js      gerador .docx (JSZip) dos 8 documentos e ZIP final
 js/jogo.js            etapas, missões, XP, níveis, medalhas e checklist
-js/exemplo.js         exemplos (monitoramento de pressão — MU; dosador de fertilizantes — PI)
+js/preenche.js        pré-preenchimento em cadeia (resumo + reivindicações → resto) e leitura do retorno da busca colado
+js/exemplo.js         exemplo: sistema de monitoramento de pressão para circuitos pneumáticos
 js/etapas.js          páginas de cada etapa
 js/app.js             ligação dos campos, ações, caderno, janelas e tour
 lib/jszip.min.js      JSZip (MIT)

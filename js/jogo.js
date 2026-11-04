@@ -13,20 +13,20 @@ const algum = t => String(t || '').trim().length > 0;
 /** Etapas na ordem do guia. grupo = título no menu. */
 const ETAPAS = [
     { id: 'inicio', grupo: 'Comece aqui', titulo: 'Painel do inventor', icone: '🏠' },
-    { id: 'entenda', grupo: '1. Entenda e prepare', titulo: 'Entenda: PI ou MU?', icone: '📘', guia: 'Entenda' },
-    { id: 'ficha', grupo: '1. Entenda e prepare', titulo: 'Sua invenção', icone: '💡' },
-    { id: 'fontes', grupo: '1. Entenda e prepare', titulo: 'Caderno de fontes', icone: '📚' },
-    { id: 'classificacao', grupo: '2. Faça buscas', titulo: 'Classificação', icone: '🧭', guia: 'Faça buscas' },
-    { id: 'buscas', grupo: '2. Faça buscas', titulo: 'Buscas de anterioridade', icone: '🔎', guia: 'Faça buscas' },
-    { id: 'relatorio', grupo: '3. Escreva o pedido', titulo: 'Relatório descritivo', icone: '📝', guia: 'Inicie o pedido' },
-    { id: 'reivindicacoes', grupo: '3. Escreva o pedido', titulo: 'Reivindicações', icone: '⚖️' },
-    { id: 'desenhos', grupo: '3. Escreva o pedido', titulo: 'Desenhos', icone: '🖼️' },
-    { id: 'resumo', grupo: '3. Escreva o pedido', titulo: 'Resumo', icone: '✂️' },
-    { id: 'inventores', grupo: '4. Via universidade', titulo: 'Inventores e participação', icone: '👥' },
-    { id: 'universidade', grupo: '4. Via universidade', titulo: 'Formulários da universidade', icone: '🏛️' },
-    { id: 'revisao', grupo: '5. Deposite e acompanhe', titulo: 'Revisão final', icone: '✅' },
-    { id: 'deposito', grupo: '5. Deposite e acompanhe', titulo: 'Depósito e GRU', icone: '📤', guia: 'Inicie o pedido / Pague a GRU' },
-    { id: 'acompanhe', grupo: '5. Deposite e acompanhe', titulo: 'Acompanhe e prazos', icone: '📅', guia: 'Acompanhe / Pedido em andamento / Validade' },
+    { id: 'entenda', grupo: '1. Entenda', titulo: 'Entenda: PI ou MU?', icone: '📘', guia: 'Entenda' },
+    { id: 'resumo', grupo: '2. O núcleo do pedido', titulo: 'Resumo', icone: '✂️' },
+    { id: 'reivindicacoes', grupo: '2. O núcleo do pedido', titulo: 'Reivindicações', icone: '⚖️' },
+    { id: 'ficha', grupo: '2. O núcleo do pedido', titulo: 'Sua invenção (conferir)', icone: '💡' },
+    { id: 'fontes', grupo: '2. O núcleo do pedido', titulo: 'Caderno de fontes', icone: '📚' },
+    { id: 'classificacao', grupo: '3. Faça buscas', titulo: 'Classificação', icone: '🧭', guia: 'Faça buscas' },
+    { id: 'buscas', grupo: '3. Faça buscas', titulo: 'Buscas de anterioridade', icone: '🔎', guia: 'Faça buscas' },
+    { id: 'relatorio', grupo: '4. Escreva o restante', titulo: 'Relatório descritivo', icone: '📝', guia: 'Inicie o pedido' },
+    { id: 'desenhos', grupo: '4. Escreva o restante', titulo: 'Desenhos', icone: '🖼️' },
+    { id: 'inventores', grupo: '5. Via universidade', titulo: 'Inventores e participação', icone: '👥' },
+    { id: 'universidade', grupo: '5. Via universidade', titulo: 'Formulários da universidade', icone: '🏛️' },
+    { id: 'revisao', grupo: '6. Deposite e acompanhe', titulo: 'Revisão final', icone: '✅' },
+    { id: 'deposito', grupo: '6. Deposite e acompanhe', titulo: 'Depósito e GRU', icone: '📤', guia: 'Inicie o pedido / Pague a GRU' },
+    { id: 'acompanhe', grupo: '6. Deposite e acompanhe', titulo: 'Acompanhe e prazos', icone: '📅', guia: 'Acompanhe / Pedido em andamento / Validade' },
     { id: 'entrega', grupo: '🏆 Fim', titulo: 'Os 8 documentos', icone: '🏆' }
 ];
 
@@ -34,7 +34,7 @@ function missoes(p) {
     const f = p.ficha, r = p.relatorio, u = p.universidade;
     const rs = p.reivindicacoes.filter(x => x.texto.trim());
     const feitas = Object.values(p.busca.executadas).filter(e => e && e.feita);
-    const basesFeitas = new Set(feitas.map(e => e.base));
+    const basesFeitas = new Set([...feitas.map(e => e.base), ...p.busca.registroColado.map(r => r.base)]);
     const erros = verificar(p).filter(x => x.nivel === 'erro');
     const soma = u.inventores.concat(u.colaboradores).reduce((s, x) => s + (Number(String(x.percentual).replace(',', '.')) || 0), 0);
     return {
@@ -59,10 +59,10 @@ function missoes(p) {
         ],
         buscas: [
             { t: 'Preencher as famílias de termos', xp: 15, ok: ['objeto', 'elemento', 'problema'].every(k => algum(p.busca.termos[k])) },
-            { t: 'Executar buscas em 3 bases', xp: 25, ok: basesFeitas.size >= 3 },
-            { t: 'Executar buscas nas 5 bases de patentes', xp: 25, ok: ['inpi', 'google', 'espacenet', 'patentscope', 'uspto'].every(b => basesFeitas.has(b)) },
+            { t: 'Gerar o prompt e colar o retorno da busca', xp: 30, ok: p.busca.registroColado.length > 0 || !!p.busca.retorno },
+            { t: 'Cobrir as 5 bases de patentes (retorno colado ou buscas à mão)', xp: 20, ok: ['inpi', 'google', 'espacenet', 'patentscope', 'uspto'].every(b => basesFeitas.has(b)) },
             { t: 'Registrar 5 documentos encontrados', xp: 20, ok: p.busca.resultados.filter(x => x.num).length >= 5 },
-            { t: 'Buscar trabalhos da própria equipe (autodivulgação)', xp: 15, ok: feitas.some(e => e.est === 'E' || e.est === 'G') }
+            { t: 'Buscar trabalhos da própria equipe (autodivulgação)', xp: 15, ok: feitas.some(e => e.est === 'E' || e.est === 'G') || /autodivulga|pr[óo]pria equipe|ufpel|universidade/i.test(p.busca.retorno) }
         ],
         relatorio: [
             { t: 'Campo da invenção', xp: 10, ok: cheio(r.campo) },

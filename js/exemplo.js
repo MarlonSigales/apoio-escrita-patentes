@@ -1,12 +1,35 @@
 /**
  * © 2026 Apoio à Escrita de Patentes — Inova Agro UFPel EMBRAPII. Todos os direitos reservados; copiar, reproduzir ou alterar exige autorização do autor (ver LICENSE).
  *
- * EXEMPLOS: (1) um pedido completo de sistema de monitoramento de pressão (modelo da equipe) e (2) o início de um
- * pedido de dosador de fertilizantes de cilindro vertical, com a busca de anterioridade registrada.
+ * EXEMPLO: o pedido completo do sistema de monitoramento de pressão para circuitos pneumáticos (modelo da equipe),
+ * com o retorno da busca de anterioridade colado do formulário da universidade.
  * Os inventores dos exemplos são fictícios: dados pessoais reais nunca entram no código.
  */
 
 'use strict';
+
+/** Retorno da busca como veio no Formulário de Busca de Anterioridade do projeto (contagens por base e palavra-chave). */
+const RETORNO_EXEMPLO = `INPI - (http://www.inpi.gov.br/)
+Manômetro digital / 16
+Sensor de pressão sem fio / 68
+Sensor de pressão / 1843
+Monitoramento de pressão / 506
+
+USPTO (EUA) - (http://patft.uspto.gov/)
+Pressure sensor / 1538402
+
+ESPACENET (EUROPA) - (http://worldwide.espacenet.com/)
+Digital pressure gauge / 149602
+
+| Documento | Título | Base | Relevância | Observação |
+|---|---|---|---|---|
+| PI 9203934-0 A | Dispositivo de medição de pressão | INPI | 4 | Alguma semelhança, mas outro campo de aplicação |
+| MU 8402728-2 U | Manômetro digital automotivo | INPI | 3 | Área automotiva, instalação fixa |
+
+Resultado das buscas realizadas — foram encontradas anterioridades? [ x ] Não [ ] Sim
+
+Nota explicativa
+Os documentos encontrados tratam de manômetros digitais na área da saúde e automotiva, com instalação fixa; nenhum apresenta a mesma construção portátil, sem fio e aplicada a circuitos pneumáticos de máquinas agrícolas.`;
 
 function exemploPressao() {
     const p = pedidoVazio();
@@ -81,44 +104,8 @@ function exemploPressao() {
         Object.assign(inventorVazio(), { nome: 'Professor(a) Orientador(a) Exemplo', qualificacao: 'Professor de Ensino Superior', notificante: true, percentual: '50', cidade: 'Pelotas', uf: 'RS' }),
         Object.assign(inventorVazio(), { nome: 'Estudante Exemplo', qualificacao: 'Aluno Doutorado ou Pós-Doutorado', percentual: '50', cidade: 'Pelotas', uf: 'RS' })
     ];
-    p.fontes = [{ id: uid(), nome: 'Anotações do projeto (exemplo)', tipo: 'texto', ativa: true, data: hojeISO(), texto: p.relatorio.descricao + '\n' + p.relatorio.problemaSolucao + '\n' + p.ficha.estadoTecnica }];
-    return normalizarPedido(p);
-}
-
-function exemploDosador() {
-    const p = pedidoVazio();
-    Object.assign(p, { natureza: 'PI', titulo: 'Dosador de fertilizantes com cilindro rotativo vertical', area: 'máquinas agrícolas (dosadores de fertilizantes e semeadoras-adubadoras)' });
-    Object.assign(p.contexto, { instituicao: 'Universidade Federal de Pelotas', ano: '2026', inventores: 'Orientador(a) Exemplo\nCoorientador(a) Exemplo\nEstudante Exemplo', depositante: 'Universidade Federal de Pelotas' });
-    p.contexto.divulgacoes = [{ id: uid(), data: '2026-08-17', meio: 'Defesa pública do TCC' }];
-    Object.assign(p.ficha, {
-        campo: 'Um mecanismo dosador de fertilizantes sólidos granulados para semeadoras-adubadoras, com cilindro (tambor) rotativo de eixo vertical',
-        problema: 'Os dosadores helicoidais geram fluxo intermitente (pulsação), com coeficiente de variação acima de 30% em laboratório, e a vazão varia com a inclinação do terreno: aclive causa superdosagem e declive causa subdosagem',
-        solucao: 'Um dosador de cilindro rotativo vertical com cavidades circulares distribuídas ao redor do furo central de acoplamento ao eixo, com entrada superior e saída inferior axial, alimentado por gravidade',
-        componentes: [
-            { id: uid(), num: '01', nome: 'Carcaça quadrada com flange', funcao: 'fixar o dosador com quatro parafusos' },
-            { id: uid(), num: '02', nome: 'Entrada superior circular', funcao: 'receber o fertilizante do reservatório' },
-            { id: uid(), num: '03', nome: 'Tambor rotativo', funcao: 'transportar volumes definidos de fertilizante' },
-            { id: uid(), num: '04', nome: 'Cavidades circulares', funcao: 'definir o volume dosado em cada passagem' },
-            { id: uid(), num: '05', nome: 'Furo central de seção quadrada', funcao: 'acoplar o tambor ao eixo' },
-            { id: uid(), num: '06', nome: 'Saída inferior em tubo com abas tipo baioneta', funcao: 'conduzir o fertilizante ao tubo de descida' }
-        ],
-        vantagens: 'Maior uniformidade de distribuição linear, menor pulsação e menor sensibilidade à inclinação do terreno',
-        aplicacoes: 'semeadoras-adubadoras e distribuidores de fertilizantes em linha',
-        ensaios: 'Vazão mássica em fatorial 3x5x3 (inclinações de -11° a +11°; doses de 200, 300 e 400 kg/ha) e distribuição linear em esteira com 60 recipientes',
-        concorrentes: 'dosadores helicoidais simples e duplos e dosadores de rotor dentado'
-    });
-    p.busca.termos = { objeto: 'dosador; fertilizante; semeadora-adubadora', elemento: 'cilindro; tambor; rotor', orientacao: 'eixo vertical; vertical', geometria: 'cavidades; alvéolo; orifício', problema: 'pulsação; uniformidade', condicao: 'inclinação; terreno', fabricacao: 'impressão 3D' };
-    p.busca.depositantes = 'J.Assy; John Deere; Stara; Jumil; Marchesan; Vence Tudo; Universidade Federal de Pelotas';
-    p.classes.marcadas = ['A01C 7/12', 'A01C 15/00', 'A01C 7/06'];
-    const R = (num, titulo, base, rel, cat, nota) => ({ id: uid(), num, titulo, base, relevancia: rel, categoria: cat, tipoDoc: 'Patente ou MU', lido: 'resumo', nota, link: 'https://patents.google.com/patent/' + num.replace(/\s|-/g, '') + '/pt', carac: {} });
-    p.busca.resultados = [
-        R('BR102016023064B1', 'Dosador com disco rotativo de orifícios passantes', 'Google Patents', 5, 'X', 'Disco horizontal com orifícios de dosagem; maior ameaça à novidade.'),
-        R('BR202022000099U2', 'Dosador de adubo com rotor de cavidades', 'Google Patents', 5, 'Y', 'Rotor com cavidades e funil fora do centro.'),
-        R('BR102012012157B1', 'Dosador de palhetas com duas saídas (UFPel)', 'INPI', 5, 'Y', 'Rotor de palhetas no plano horizontal; mesma instituição.'),
-        R('US3513700A', 'Metering apparatus', 'USPTO', 4, 'A', 'Carcaça cilíndrica de eixo vertical com roda de pás.'),
-        R('BR102020010445B1', 'Dosador de insumos (rotor de fluxo vertical)', 'Google Patents', 4, 'A', 'Eixo horizontal; células entre aletas.')
-    ];
-    p.relatorio.campo = RASCUNHOS.campo(p);
+    aplicarRetorno(p, RETORNO_EXEMPLO);
+    p.fontes.unshift({ id: uid(), nome: 'Anotações do projeto (exemplo)', tipo: 'texto', ativa: true, data: hojeISO(), texto: p.relatorio.descricao + '\n' + p.relatorio.problemaSolucao + '\n' + p.ficha.estadoTecnica });
     return normalizarPedido(p);
 }
 

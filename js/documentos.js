@@ -242,6 +242,10 @@ function contagensPorBase(p) {
         if (!base) continue;
         (porBase[base] = porBase[base] || []).push([String(e.consulta || b.consulta || '').slice(0, 160), e.n === '' || e.n == null ? '—' : String(e.n)]);
     }
+    for (const r of p.busca.registroColado) {
+        const lista = porBase[r.base || 'outra'] = porBase[r.base || 'outra'] || [];
+        if (!lista.some(x => x[0] === r.consulta)) lista.push([String(r.consulta).slice(0, 160), r.n === '' || r.n == null ? '—' : String(r.n)]);
+    }
     return porBase;
 }
 
@@ -259,9 +263,10 @@ function blocosFormBusca(p) {
         T('CLASSIFICAÇÕES DE PATENTES ASSOCIADAS:', { b: true }), T('- IPC/CPC: ' + (classesBusca(p).join(', ') || '[COMPLETAR]') + '.'),
         T('PALAVRAS-CHAVE ASSOCIADAS:', { b: true }), T(palavrasChave(p).join(', ') + '.'),
         T('BANCO E BASE DE DADOS', { b: true, al: 'c' })];
-    for (const base of ['inpi', 'google', 'espacenet', 'patentscope', 'uspto', 'scholar', 'scielo']) {
+    for (const base of ['inpi', 'google', 'capes', 'uspto', 'espacenet', 'patentscope', 'scholar', 'scielo', 'outra']) {
+        if (['patentscope', 'scholar', 'scielo', 'outra'].includes(base) && !cont[base]) continue;
         const linhas = cont[base] || [];
-        b.push(T(`${BASES[base].nome} - (${BASES[base].url})`, { b: true, manter: true, tam: 11 }));
+        b.push(T(`${BASES[base].nome}${BASES[base].url ? ' - (' + BASES[base].url + ')' : ' - (identificar)'}`, { b: true, manter: true, tam: 11 }));
         b.push({ t: 'tab', cab: true, tam: 9, linhas: [['PALAVRAS-CHAVE / SEQUÊNCIA', 'Nº DE DOCUMENTOS LOCALIZADOS'], ...(linhas.length ? linhas : [['(não pesquisada)', '—']])], larg: [7500, 2400] });
     }
     b.push(T('AVISO IMPORTANTE', { b: true, al: 'c' }),
@@ -273,7 +278,7 @@ function blocosFormBusca(p) {
         T('Categorias: ' + Object.values(CATEGORIAS).join('; ') + '.', { tam: 9 }),
         T('Documentos: "Patente ou MU" – pedido de patente ou de modelo de utilidade publicado; "Artigo ou Livro"; "Trabalho de Conclusão" – TCC, dissertação ou tese defendida em banca aberta; "Apresentação"; "Outro". Publicação: data da publicação e/ou divulgação. Observação: breve comentário da diferença entre o documento e a invenção (novidade).', { tam: 9 }),
         T('NOTA EXPLICATIVA DO RESULTADO DA PESQUISA:', { b: true }),
-        T(vazioSe(u.notaBusca || textoEstadoTecnica(p), 'COMPLETAR')));
+        T(vazioSe(u.notaBusca || p.busca.notaRetorno || textoEstadoTecnica(p), 'COMPLETAR')));
     return b;
 }
 
@@ -287,7 +292,7 @@ function blocosRelBusca(p) {
         T('1. Classificações usadas (marcadas por aproximação e conferidas pelo aluno)', { b: true }),
         T(classesBusca(p).map(c => `${c} — ${tituloClasse(c) || 'informada pelo usuário'}`).join('\n') || '[nenhuma]', { al: 'e' }),
         T('2. Registro da busca', { b: true }),
-        { t: 'tab', cab: true, tam: 8, linhas: [['Base', 'Estr.', 'Sequência exata', 'Resultados', 'Triados', 'Data'], ...buscas.filter(x => ex[x.id] && ex[x.id].feita).map(x => [BASES[x.base].nome, x.est, x.consulta, String(ex[x.id].n ?? ''), String(ex[x.id].triados ?? ''), dataBR(ex[x.id].data)])], larg: [1300, 500, 5300, 900, 800, 1000] },
+        { t: 'tab', cab: true, tam: 8, linhas: [['Base', 'Estr.', 'Sequência exata', 'Resultados', 'Triados', 'Data'], ...buscas.filter(x => ex[x.id] && ex[x.id].feita).map(x => [BASES[x.base].nome, x.est, x.consulta, String(ex[x.id].n ?? ''), String(ex[x.id].triados ?? ''), dataBR(ex[x.id].data)]), ...p.busca.registroColado.map(r => [(BASES[r.base] || BASES.outra).nome, '—', r.consulta, String(r.n ?? ''), String(r.triados ?? ''), 'retorno colado'])], larg: [1300, 500, 5300, 900, 800, 1000] },
         T('3. Documentos mais relevantes', { b: true }),
         { t: 'tab', cab: true, tam: 8, linhas: [['Nº', 'Título', 'Base', 'Cat.', 'Lido', 'Rel.', 'Nota / diferença'], ...rs.map(r => [r.num, r.titulo, r.base, r.categoria, r.lido, String(r.relevancia), r.nota + (r.link ? '\n' + r.link : '')])], larg: [1500, 2300, 1000, 500, 900, 500, 3100] }];
     if (car.length && rs.length) {
@@ -300,13 +305,15 @@ function blocosRelBusca(p) {
     const div = p.contexto.divulgacoes.filter(d => d.data).sort((a, c) => a.data.localeCompare(c.data));
     b.push(T('6. Alerta de prazos', { b: true }),
         T(div.length ? div.map(d => `${dataBR(d.data)} — ${d.meio}: período de graça até ${dataBR(somarMeses(d.data, 12))} (art. 12 da Lei 9.279/96).`).join('\n') : 'Nenhuma divulgação registrada. Não divulgue antes do depósito.', { al: 'e' }),
-        T('7. Lacunas', { b: true }), T(Object.keys(BASES).filter(k => !buscas.some(x => x.base === k && ex[x.id] && ex[x.id].feita)).map(k => '- ' + BASES[k].nome + ': não pesquisada').join('\n') || 'Todas as bases foram pesquisadas.', { al: 'e' }));
+        T('7. Lacunas', { b: true }), T(Object.keys(BASES).filter(k => k !== 'outra' && k !== 'capes' && !buscas.some(x => x.base === k && ex[x.id] && ex[x.id].feita) && !p.busca.registroColado.some(r => r.base === k)).map(k => '- ' + BASES[k].nome + ': não pesquisada').join('\n') || 'Todas as bases foram pesquisadas.', { al: 'e' }));
     return b;
 }
 
 /** Características do objeto para o quadro comparativo: a partir dos componentes e da solução. */
 function caracteristicasComparacao(p) {
     if (Array.isArray(p.busca.caracteristicas) && p.busca.caracteristicas.length) return p.busca.caracteristicas;
+    const rs = p.reivindicacoes.filter(r => r.texto.trim());
+    if (rs.length) return rs.slice(0, 8).map((r, i) => `Reiv. ${i + 1}: ${semFinal(r.texto).slice(0, 110)}${r.texto.length > 110 ? '…' : ''}`);
     const c = p.ficha.componentes.slice(0, 6).map(x => x.nome + (x.funcao ? ' — ' + x.funcao : ''));
     if (p.busca.termos.orientacao) c.unshift(p.busca.termos.elemento.split(';')[0] + ' ' + p.busca.termos.orientacao.split(';')[0]);
     return c.filter(Boolean).slice(0, 7);

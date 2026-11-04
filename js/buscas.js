@@ -24,7 +24,9 @@ const BASES = {
     patentscope: { nome: 'PATENTSCOPE', url: 'https://patentscope.wipo.int/search/pt/search.jsf', cor: '#00639e' },
     uspto: { nome: 'USPTO PPUBS', url: 'https://ppubs.uspto.gov/pubwebapp/', cor: '#5b2c83' },
     scholar: { nome: 'Google Acadêmico', url: 'https://scholar.google.com/', cor: '#4285f4' },
-    scielo: { nome: 'SciELO', url: 'https://search.scielo.org/', cor: '#b84a00' }
+    scielo: { nome: 'SciELO', url: 'https://search.scielo.org/', cor: '#b84a00' },
+    capes: { nome: 'Portal CAPES', url: 'https://www.periodicos.capes.gov.br/', cor: '#1b5e20' },
+    outra: { nome: 'Outras bases', url: '', cor: '#777' }
 };
 
 const ESTRATEGIAS = {

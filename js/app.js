@@ -31,27 +31,6 @@ async function copiarTexto(t) {
     catch (e) { janelaTexto('Copie o texto', t, null); }
 }
 
-// ------------------------------------------------------------ caminhos de dados ("a.b.#id.c")
-function partes(c) { return String(c).split('.'); }
-function lerCaminho(obj, c) {
-    let o = obj;
-    for (const k of partes(c)) {
-        if (o == null) return '';
-        o = k.startsWith('#') && Array.isArray(o) ? o.find(x => x.id === k.slice(1)) : o[k];
-    }
-    return o ?? '';
-}
-function gravarCaminho(obj, c, v) {
-    const ks = partes(c);
-    let o = obj;
-    for (let i = 0; i < ks.length - 1; i++) {
-        const k = ks[i];
-        let prox = k.startsWith('#') && Array.isArray(o) ? o.find(x => x.id === k.slice(1)) : o[k];
-        if (prox == null) { prox = {}; o[k] = prox; }
-        o = prox;
-    }
-    o[ks[ks.length - 1]] = v;
-}
 function valorDe(el) {
     if (el.type === 'checkbox') return el.checked;
     if (el.dataset.c && /\.dep$/.test(el.dataset.c)) return el.value ? Number(el.value) : null;
@@ -130,6 +109,10 @@ async function hidratarImagens() {
 function rota() {
     const id = (location.hash.match(/^#\/([\w-]+)/) || [])[1] || 'inicio';
     App.pagina = PAGINAS[id] ? id : 'inicio';
+    if (['ficha', 'classificacao', 'buscas', 'relatorio', 'desenhos', 'inventores', 'universidade', 'revisao', 'entrega'].includes(App.pagina) && (App.p.resumo.trim() || App.p.reivindicacoes.length)) {
+        const feito = autoPreencher(App.p);
+        if (feito.length) { salvar(); atualizarPlacar(); avisar('⚡ Pré-preenchido com o que você já escreveu: ' + feito.slice(0, 6).join(', ') + (feito.length > 6 ? '…' : ''), 'ok', 6000); }
+    }
     document.body.classList.remove('sidebar-aberta');
     renderPagina();
 }
@@ -272,7 +255,7 @@ const ACOES = {
     },
     'exemplo': async (el) => {
         if (temConteudo() && !confirm('Trocar o pedido atual pelo exemplo? (baixe o ZIP antes se quiser guardar)')) return;
-        App.p = el.dataset.ex === 'dosador' ? exemploDosador() : exemploPressao();
+        App.p = exemploPressao();
         await carregarFigurasExemplo(App.p);
         App.placar = null; salvar(); atualizarPlacar(false); location.hash = '#/inicio'; renderPagina();
         avisar('Exemplo carregado. Explore as etapas!');
@@ -326,6 +309,29 @@ const ACOES = {
             mudou();
         } catch (e) { avisar('Erro ao gerar o ZIP: ' + e.message, 'erro', 6000); }
     },
+    'pre-preencher'() {
+        const feito = autoPreencher(App.p);
+        avisar(feito.length ? '⚡ Pré-preenchido: ' + feito.slice(0, 10).join(', ') + (feito.length > 10 ? '…' : '') : 'Nada novo para pré-preencher (só completo o que está vazio).', 'ok', 7000);
+        mudou();
+    },
+    'modelo-resumo'() {
+        if (App.p.resumo.trim() && !confirm('Substituir o resumo pelo modelo?')) return;
+        App.p.resumo = `O presente ${nomeNatureza(App.p)} trata de [o que é] (FIGURA 1) com [componente principal] (01) que [o que faz].\n\n[Como funciona, citando os componentes] (02), (03).\n\nAlém disso, [vantagem].\n\nEsse dispositivo será aplicado em [aplicações].`;
+        mudou();
+    },
+    'colar-retorno'() {
+        const t = ($('#retorno-busca') || {}).value || '';
+        if (!t.trim()) return avisar('Cole o retorno da busca no campo antes.', 'erro');
+        const r = aplicarRetorno(App.p, t);
+        autoPreencher(App.p);
+        avisar(`Retorno lido: ${r.nr} contagem(ns), ${r.nd} documento(s)${r.nota ? ' e a conclusão' : ''}. Já estão no Formulário de Busca de Anterioridade.`, 'ok', 7000);
+        mudou();
+    },
+    'limpar-retorno'() {
+        if (!confirm('Apagar o retorno colado e as contagens lidas? (os documentos ficam)')) return;
+        Object.assign(App.p.busca, { retorno: '', registroColado: [], notaRetorno: '' }); mudou();
+    },
+    'add-registro'() { App.p.busca.registroColado.push({ id: uid(), base: 'inpi', consulta: '', n: '', triados: '' }); mudou(); },
     'tour'() { iniciarTour(true); },
     'fechar-menu'() { document.body.classList.remove('sidebar-aberta'); }
 };

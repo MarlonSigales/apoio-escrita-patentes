@@ -50,7 +50,7 @@ PAGINAS.inicio = {
         const pl = App.placar;
         const prox = proximaEtapa();
         const pct = pl.total ? Math.round(100 * pl.xp / pl.total) : 0;
-        return `${cabecalho('inicio', 'Escreva seu pedido de patente passo a passo, seguindo o Guia Básico do INPI e o caminho da universidade. Cada missão cumprida dá XP. No fim, você recebe os 8 documentos prontos.')}
+        return `${cabecalho('inicio', 'Escreva seu pedido de patente passo a passo, seguindo o Guia Básico do INPI e o caminho da universidade. Comece pelo <b>resumo</b> e pelas <b>reivindicações</b>: delas saem a ficha, as buscas, o relatório, os desenhos e os formulários. Cada missão cumprida dá XP. No fim, você recebe os 8 documentos prontos.')}
         <div class="painel-jogo card">
             <div class="nivel"><span class="nivel-icone">${pl.nivel[2]}</span><div><small>Seu nível</small><b>${esc(pl.nivel[1])}</b><span>${pl.xp} XP${pl.prox ? ` · faltam ${pl.prox[0] - pl.xp} XP para <b>${esc(pl.prox[1])}</b>` : ''}</span></div></div>
             <div class="barra-xp grande"><i style="width:${pct}%"></i></div><small>${pct}% do pedido completo</small>
@@ -61,8 +61,8 @@ PAGINAS.inicio = {
         <div class="card"><h2>Comece rápido</h2><div class="comecar-opcoes">
             <button type="button" class="opcao" data-acao="importar-md"><b>⇪ Tenho o prompt da busca (.md)</b><span>Preenche ficha, termos, classes e buscas a partir do prompt de anterioridade.</span></button>
             <button type="button" class="opcao" data-acao="importar-docx"><b>📄 Tenho um pedido em Word</b><span>Lê Relatório, Reivindicações, Desenhos e Resumo (.docx) e preenche tudo.</span></button>
-            <button type="button" class="opcao" data-acao="exemplo" data-ex="pressao"><b>🧪 Ver exemplo completo</b><span>Sistema de monitoramento de pressão (modelo de utilidade).</span></button>
-            <button type="button" class="opcao" data-acao="exemplo" data-ex="dosador"><b>🌱 Exemplo de busca</b><span>Dosador de fertilizantes de cilindro vertical, com buscas registradas.</span></button>
+            <button type="button" class="opcao" data-acao="exemplo" data-ex="pressao"><b>🧪 Ver exemplo completo</b><span>Sistema de monitoramento de pressão para circuitos pneumáticos.</span></button>
+            <a class="opcao" href="#/resumo"><b>✍️ Começar do zero</b><span>Escreva o resumo e as reivindicações: o app pré-preenche o resto.</span></a>
         </div></div>
         <div class="card"><h2>🏅 Medalhas</h2><div class="medalhas">${pl.medalhas.map(m => `<div class="medalha ${m.ok ? 'ganha' : ''}" title="${escAttr(m.desc)}"><span>${m.icone}</span><b>${esc(m.nome)}</b><small>${esc(m.desc)}</small></div>`).join('')}</div></div>
         <div class="card"><h2>O caminho</h2><ol class="trilha">${ETAPAS.filter(e => e.id !== 'inicio').map(e => { const st = estadoEtapa(pl, e.id); return `<li class="${st}"><a href="#/${e.id}">${e.icone} ${esc(e.titulo)}</a> <small>${pl.porEtapa[e.id] ? pl.porEtapa[e.id].feitas + '/' + pl.porEtapa[e.id].total : ''}</small></li>`; }).join('')}</ol></div>`;
@@ -102,7 +102,7 @@ PAGINAS.entenda = {
 PAGINAS.ficha = {
     render(p) {
         const f = p.ficha;
-        return `${cabecalho('ficha', 'Conte a sua invenção com as suas palavras. Esta ficha pré-preenche as buscas, a classificação, o relatório, as reivindicações, o resumo e os formulários da universidade.')}
+        return `${cabecalho('ficha', 'Esta ficha já vem pré-preenchida pelo resumo e pelas reivindicações. Confira e complete (principalmente o problema e o que existe hoje): ela alimenta a classificação, as buscas, o relatório, os desenhos e os formulários da universidade.')}
         <div class="card"><div class="grade-campos">
             ${campo('titulo', 'Título', { largo: true, dica: 'curto, técnico, sem marca' })}
             ${campo('area', 'Área técnica', { ph: 'Ex.: máquinas agrícolas, eletrônica embarcada' })}
@@ -170,39 +170,53 @@ PAGINAS.buscas = {
             return `<tr><td><b>${nome}</b><br><small>${dica}</small></td><td><input type="text" data-c="busca.termos.${k}" value="${escAttr(p.busca.termos[k])}" placeholder="termos em português separados por ;"></td><td class="pequeno">${f.en.map(esc).join('; ') || '<i>sem tradução</i>'}<br>${f.es.map(esc).join('; ')}</td></tr>`;
         }).join('');
         const semTr = FAMILIAS.flatMap(([k]) => listaTermos(p.busca.termos[k])).filter(t => !traduzir(p, t).en.length);
-        return `${cabecalho('buscas', 'Antes de escrever, veja se já existe algo igual. O app monta as buscas das estratégias A a G para as 5 bases de patentes e para a literatura. Clique, execute, anote quantos resultados apareceram e registre os documentos parecidos.')}
-        <div class="card aviso-captcha">🛡️ <b>CAPTCHA, verificação de segurança ou login?</b> Resolva você mesmo na página da base e depois continue. Se estiver usando uma IA para buscar, ela deve <b>parar e pedir que você resolva manualmente</b> (já está escrito no prompt).</div>
-        <div class="card"><div class="card-topo"><h2>1. Famílias de termos</h2><div class="botoes"><button type="button" class="btn btn-secondary btn-sm" data-acao="preencher-termos">🪄 Preencher pela ficha</button><button type="button" class="btn btn-secondary btn-sm" data-acao="importar-md">⇪ Importar prompt .md</button></div></div>
+        const reg = p.busca.registroColado;
+        return `${cabecalho('buscas', 'Antes de escrever o relatório, veja se já existe algo igual. Primeiro gere o prompt e deixe uma IA com navegador (ex.: Claude com o Chrome) fazer a busca; depois cole o retorno aqui. Só faça à mão o que faltar.')}
+        <div class="card"><div class="card-topo"><h2>1. Termos da busca</h2><div class="botoes"><button type="button" class="btn btn-secondary btn-sm" data-acao="preencher-termos">🪄 Preencher pela ficha</button><button type="button" class="btn btn-secondary btn-sm" data-acao="importar-md">⇪ Importar prompt .md</button></div></div>
+        <p class="nota">Já vêm do resumo e das reivindicações. Confira e acrescente sinônimos (separados por ;). Classes marcadas: ${classesBusca(p).map(esc).join(', ') || '<a href="#/classificacao">marcar</a>'}.</p>
         <div class="tabela-rolagem"><table class="tabela"><thead><tr><th>Família</th><th>Português (sinônimos com ;)</th><th>Inglês / espanhol (automático)</th></tr></thead><tbody>${fam}</tbody></table></div>
         ${semTr.length ? `<details class="nota"><summary>Traduzir ${semTr.length} termo(s) sem tradução</summary><div class="grade-campos">${semTr.slice(0, 12).map(t => `<label>${esc(t)}<input type="text" data-acao-traducao="${escAttr(semAcento(t))}" value="${escAttr(p.busca.traducoes[semAcento(t)] || '')}" placeholder="inglês; sinônimo | espanhol"></label>`).join('')}</div></details>` : ''}
         <div class="grade-campos">${campo('busca.depositantes', 'Depositantes e inventores para a estratégia E (empresas, universidades, pessoas)', { largo: true, ph: 'Ex.: John Deere; Stara; Universidade Federal de Pelotas' })}</div></div>
-        <div class="card"><h2>2. Execute as buscas</h2><p class="nota">Marque ✔ quando executar e anote o número de resultados: isso vai para o Formulário de Busca de Anterioridade da universidade e para o relatório da busca.</p>
-        ${buscas.length ? Object.entries(porBase).map(([base, lista]) => `<details class="base-busca" ${base === 'google' ? 'open' : ''}><summary><span class="bola" style="background:${BASES[base].cor}"></span><b>${BASES[base].nome}</b> <small>${lista.filter(b => (p.busca.executadas[b.id] || {}).feita).length}/${lista.length} feitas</small></summary>
+
+        <div class="card cartao-ia"><h2>2. 🤖 Gere o prompt e peça a busca para a IA</h2><p class="nota">O prompt já sai preenchido com a sua invenção, as classes, os termos em PT/EN/ES e as estratégias A–G para as 5 bases. Ele diz para a IA <b>parar e pedir que você resolva CAPTCHA, verificação ou login manualmente</b> e continuar depois.</p>
+        <div class="botoes"><button type="button" class="btn btn-primary" data-acao="copiar-md">📋 Copiar prompt</button><button type="button" class="btn btn-secondary" data-acao="baixar-md">⬇ Baixar .md</button></div></div>
+
+        <div class="card"><h2>3. 📥 Cole o retorno da busca</h2><p class="nota">Cole a resposta da IA, o texto do relatório (PDF) ou uma tabela de planilha. O app lê as contagens por base e palavra-chave, os documentos (número, título, relevância, link) e a conclusão, e leva tudo para o <b>Formulário de Busca de Anterioridade</b> e para o relatório da busca.</p>
+        <textarea id="retorno-busca" rows="7" placeholder="Cole aqui o retorno da busca (tabelas em Markdown, texto do PDF ou linhas como &quot;Sensor de pressão / 1843&quot;)"></textarea>
+        <div class="botoes"><button type="button" class="btn btn-primary" data-acao="colar-retorno">⇩ Ler o retorno colado</button>${p.busca.retorno ? `<span class="nota">Retorno já colado: ${palavras(p.busca.retorno)} palavras.</span><button type="button" class="btn-link" data-acao="limpar-retorno">apagar retorno e contagens</button>` : ''}</div>
+        ${reg.length ? `<h3>Contagens lidas (vão para o formulário)</h3><div class="tabela-rolagem"><table class="tabela"><thead><tr><th>Base</th><th>Palavra-chave / sequência</th><th>Nº de documentos</th><th></th></tr></thead><tbody>${reg.map(r => `<tr><td><select data-c="busca.registroColado.#${r.id}.base">${Object.keys(BASES).map(k => `<option value="${k}" ${r.base === k ? 'selected' : ''}>${BASES[k].nome}</option>`).join('')}</select></td><td><input type="text" data-c="busca.registroColado.#${r.id}.consulta" value="${escAttr(r.consulta)}"></td><td class="col-num"><input type="number" data-c="busca.registroColado.#${r.id}.n" value="${escAttr(r.n)}" style="width:9rem"></td><td class="col-acao"><button type="button" class="btn-icone" data-acao="remover" data-lista="busca.registroColado" data-id="${r.id}">✕</button></td></tr>`).join('')}</tbody></table></div>` : ''}
+        <button type="button" class="btn btn-secondary btn-sm" data-acao="add-registro">＋ Contagem à mão</button>
+        ${p.busca.notaRetorno ? `<div class="grade-campos">${campo('busca.notaRetorno', 'Conclusão lida do retorno (vira a nota explicativa do formulário)', { tipo: 'textarea', largo: true, linhas: 3 })}</div>` : ''}</div>
+
+        <div class="card"><div class="card-topo"><h2>4. Documentos encontrados</h2><button type="button" class="btn btn-primary btn-sm" data-acao="add-resultado">＋ Documento</button></div>
+        <p class="nota">Vêm do retorno colado. Categoria: <b>X</b> = sozinho já tira a novidade; <b>Y</b> = combinado com outro; <b>A</b> = estado geral da técnica. Eles escrevem os fundamentos do relatório.</p>
+        ${p.busca.resultados.length ? `<div class="tabela-rolagem"><table class="tabela tabela-res"><thead><tr><th>Nº do documento</th><th>Título</th><th>Base</th><th>Tipo</th><th>Cat.</th><th>Rel.</th><th>Lido</th><th>Publicação</th><th>Diferença para a sua invenção</th><th></th></tr></thead><tbody>${p.busca.resultados.map(r => { const c = `busca.resultados.#${r.id}.`; return `<tr><td><input type="text" data-c="${c}num" value="${escAttr(r.num)}">${r.num ? `<a class="link-doc" href="${escAttr(r.link || 'https://patents.google.com/patent/' + r.num.replace(/[\s.\-\/]/g, '') + '/pt')}" target="_blank" rel="noopener">abrir ↗</a>` : ''}</td><td><input type="text" data-c="${c}titulo" value="${escAttr(r.titulo)}"></td>
+            <td><input type="text" data-c="${c}base" value="${escAttr(r.base)}" style="width:7rem"></td><td><select data-c="${c}tipoDoc">${TIPOS_DOC.map(t => `<option ${r.tipoDoc === t ? 'selected' : ''}>${t}</option>`).join('')}</select></td>
+            <td><select data-c="${c}categoria">${Object.keys(CATEGORIAS).map(k => `<option ${r.categoria === k ? 'selected' : ''}>${k}</option>`).join('')}</select></td>
+            <td><select data-c="${c}relevancia">${[1, 2, 3, 4, 5].map(k => `<option ${Number(r.relevancia) === k ? 'selected' : ''}>${k}</option>`).join('')}</select></td>
+            <td><select data-c="${c}lido">${['título', 'resumo', 'reivindicações', 'texto completo'].map(k => `<option ${r.lido === k ? 'selected' : ''}>${k}</option>`).join('')}</select></td>
+            <td><input type="date" data-c="${c}publicacao" value="${escAttr(r.publicacao)}"></td>
+            <td><input type="text" data-c="${c}nota" value="${escAttr(r.nota)}"></td><td class="col-acao"><button type="button" class="btn-icone" data-acao="remover" data-lista="busca.resultados" data-id="${r.id}">✕</button></td></tr>`; }).join('')}</tbody></table></div>` : '<div class="vazio">Nenhum documento ainda: cole o retorno da busca acima.</div>'}</div>
+        ${PAGINAS.buscas.quadro(p)}
+
+        <details class="card manual"><summary><b>5. 🖐️ Buscas à mão (só o que faltar)</b> <small>${buscas.filter(b => (p.busca.executadas[b.id] || {}).feita).length}/${buscas.length} feitas</small></summary>
+        <div class="card aviso-captcha">🛡️ <b>CAPTCHA, verificação de segurança ou login?</b> Resolva você mesmo na página da base e depois continue.</div>
+        <p class="nota">Use quando o retorno colado não cobrir alguma base. Marque ✔ e anote o número de resultados: vai para o formulário junto com as contagens coladas.</p>
+        ${buscas.length ? Object.entries(porBase).map(([base, lista]) => `<details class="base-busca"><summary><span class="bola" style="background:${BASES[base].cor}"></span><b>${BASES[base].nome}</b> <small>${lista.filter(b => (p.busca.executadas[b.id] || {}).feita).length}/${lista.length} feitas${reg.some(r => r.base === base) ? ' · já tem contagem colada' : ''}</small></summary>
             ${lista.map(b => { const e = p.busca.executadas[b.id] || {}; return `<div class="busca ${e.feita ? 'feita' : ''}"><div class="busca-topo"><span class="selo-est" title="${escAttr(b.rotulo)}">${b.est}</span><small>${esc(b.rotulo)}</small></div>
                 <pre class="consulta">${esc(b.consulta)}</pre>${b.dica ? `<p class="nota">${esc(b.dica)}</p>` : ''}
                 <div class="botoes"><button type="button" class="btn btn-secondary btn-sm" data-acao="copiar" data-texto="${escAttr(b.consulta)}">📋 Copiar</button><a class="btn btn-primary btn-sm" href="${escAttr(b.url)}" target="_blank" rel="noopener">Abrir ↗</a>
                 <label class="campo-inline"><input type="checkbox" data-acao="busca-feita" data-id="${escAttr(b.id)}" ${e.feita ? 'checked' : ''}> feita</label>
                 <label class="campo-inline">resultados <input type="number" min="0" data-acao="busca-n" data-campo="n" data-id="${escAttr(b.id)}" value="${escAttr(e.n ?? '')}" style="width:6rem"></label>
                 <label class="campo-inline">triados <input type="number" min="0" data-acao="busca-n" data-campo="triados" data-id="${escAttr(b.id)}" value="${escAttr(e.triados ?? '')}" style="width:5rem"></label></div></div>`; }).join('')}</details>`).join('')
-            : '<div class="vazio">Preencha ao menos duas famílias de termos (ex.: objeto e elemento) para gerar as buscas.</div>'}</div>
-        <div class="card"><div class="card-topo"><h2>3. Documentos encontrados</h2><button type="button" class="btn btn-primary btn-sm" data-acao="add-resultado">＋ Documento</button></div>
-        <p class="nota">Categoria: <b>X</b> = sozinho já tira a novidade; <b>Y</b> = combinado com outro; <b>A</b> = estado geral da técnica. Relevância 4 e 5 geram as buscas de citações (estratégia F).</p>
-        ${p.busca.resultados.length ? `<div class="tabela-rolagem"><table class="tabela tabela-res"><thead><tr><th>Nº do documento</th><th>Título</th><th>Base</th><th>Tipo</th><th>Cat.</th><th>Rel.</th><th>Lido</th><th>Publicação</th><th>Diferença para a sua invenção</th><th></th></tr></thead><tbody>${p.busca.resultados.map(r => { const c = `busca.resultados.#${r.id}.`; return `<tr><td><input type="text" data-c="${c}num" value="${escAttr(r.num)}">${r.num ? `<a class="link-doc" href="https://patents.google.com/patent/${escAttr(r.num.replace(/[\s.\-\/]/g, ''))}/pt" target="_blank" rel="noopener">abrir ↗</a>` : ''}</td><td><input type="text" data-c="${c}titulo" value="${escAttr(r.titulo)}"></td>
-            <td><input type="text" data-c="${c}base" value="${escAttr(r.base)}" style="width:7rem"></td><td><select data-c="${c}tipoDoc">${TIPOS_DOC.map(t => `<option ${r.tipoDoc === t ? 'selected' : ''}>${t}</option>`).join('')}</select></td>
-            <td><select data-c="${c}categoria">${Object.keys(CATEGORIAS).map(k => `<option ${r.categoria === k ? 'selected' : ''}>${k}</option>`).join('')}</select></td>
-            <td><select data-c="${c}relevancia">${[1, 2, 3, 4, 5].map(k => `<option ${Number(r.relevancia) === k ? 'selected' : ''}>${k}</option>`).join('')}</select></td>
-            <td><select data-c="${c}lido">${['título', 'resumo', 'reivindicações', 'texto completo'].map(k => `<option ${r.lido === k ? 'selected' : ''}>${k}</option>`).join('')}</select></td>
-            <td><input type="date" data-c="${c}publicacao" value="${escAttr(r.publicacao)}"></td>
-            <td><input type="text" data-c="${c}nota" value="${escAttr(r.nota)}"></td><td class="col-acao"><button type="button" class="btn-icone" data-acao="remover" data-lista="busca.resultados" data-id="${r.id}">✕</button></td></tr>`; }).join('')}</tbody></table></div>` : '<div class="vazio">Nenhum documento registrado.</div>'}</div>
-        ${PAGINAS.buscas.quadro(p)}
-        <div class="card cartao-ia"><h2>📄 Prompt padrão da busca (.md)</h2><p class="nota">Gera o prompt completo, já preenchido com a sua invenção, para colar numa IA que faça a busca (ex.: Claude com o Chrome). Ele já diz para a IA parar e pedir que você resolva CAPTCHAs e logins manualmente.</p>
-        <div class="botoes"><button type="button" class="btn btn-secondary" data-acao="copiar-md">📋 Copiar prompt</button><button type="button" class="btn btn-secondary" data-acao="baixar-md">⬇ Baixar .md</button><button type="button" class="btn btn-primary" data-acao="baixar-doc" data-doc="relbusca">⬇ Relatório da busca (.docx)</button></div></div>`;
+            : '<div class="vazio">Preencha ao menos duas famílias de termos para gerar as buscas.</div>'}</details>
+        <div class="card"><div class="botoes"><button type="button" class="btn btn-primary" data-acao="baixar-doc" data-doc="relbusca">⬇ Relatório da busca (.docx)</button><button type="button" class="btn btn-secondary" data-acao="baixar-doc" data-doc="formbusca">⬇ Formulário de busca (.docx)</button></div></div>`;
     },
     quadro(p) {
         const car = caracteristicasComparacao(p);
         const rs = p.busca.resultados.filter(r => r.num).sort((a, b) => b.relevancia - a.relevancia).slice(0, 10);
         if (!rs.length || !car.length) return '';
-        return `<div class="card"><h2>4. Quadro comparativo</h2><p class="nota">Para cada documento, diga se ele divulga cada característica da sua invenção: S (sim), P (parcial), N (não), ? (não sei). As que ficarem N em todos são os seus possíveis diferenciais.</p>
+        return `<div class="card"><h2>Quadro comparativo</h2><p class="nota">As características vêm das suas reivindicações. Para cada documento, diga se ele divulga cada característica: S (sim), P (parcial), N (não), ? (não sei). As que ficarem N em todos são os seus possíveis diferenciais.</p>
         <div class="tabela-rolagem"><table class="tabela"><thead><tr><th>Documento</th>${car.map((c, i) => `<th title="${escAttr(c)}">C${i + 1}</th>`).join('')}</tr></thead><tbody>${rs.map(r => `<tr><td>${esc(r.num)}</td>${car.map((c, i) => `<td class="col-centro"><select data-c="busca.resultados.#${r.id}.carac.C${i + 1}">${['?', 'S', 'P', 'N'].map(k => `<option ${(r.carac['C' + (i + 1)] || '?') === k ? 'selected' : ''}>${k}</option>`).join('')}</select></td>`).join('')}</tr>`).join('')}</tbody></table></div>
         <ol class="nota">${car.map(c => `<li>${esc(c)}</li>`).join('')}</ol></div>`;
     }
@@ -224,8 +238,9 @@ PAGINAS.relatorio = {
 PAGINAS.reivindicacoes = {
     render(p) {
         const rs = p.reivindicacoes;
-        return `${cabecalho('reivindicacoes', 'As reivindicações definem o que fica protegido. Cada uma é uma única frase. A primeira (independente) traz o essencial; as dependentes acrescentam detalhes. O app escreve o começo de cada uma para você.')}
-        <div class="card"><div class="botoes">${!rs.length ? '<button type="button" class="btn btn-primary" data-acao="rascunho-reivindicacoes">✨ Montar a partir dos componentes</button>' : ''}<button type="button" class="btn btn-secondary" data-acao="add-reivindicacao">＋ Reivindicação</button><button type="button" class="btn btn-secondary" data-acao="baixar-doc" data-doc="reivindicacoes">⬇ Baixar .docx</button></div>
+        return `${cabecalho('reivindicacoes', 'Logo depois do resumo: as reivindicações definem o que fica protegido. Cada uma é uma única frase. O app escreve o começo (título + “caracterizado por”) e usa o texto delas para pré-preencher a ficha, as buscas e o relatório.')}
+        <div class="card"><div class="botoes">${!rs.length && p.ficha.componentes.length ? '<button type="button" class="btn btn-secondary" data-acao="rascunho-reivindicacoes">✨ Montar a partir dos componentes</button>' : ''}<button type="button" class="btn btn-secondary" data-acao="add-reivindicacao">＋ Reivindicação</button><button type="button" class="btn btn-primary" data-acao="pre-preencher">⚡ Pré-preencher o pedido</button><button type="button" class="btn btn-secondary" data-acao="baixar-doc" data-doc="reivindicacoes">⬇ Baixar .docx</button></div>
+        <p class="nota">A <b>1ª reivindicação</b> diz o essencial da invenção (o que não pode faltar). As <b>dependentes</b> acrescentam um detalhe cada: alimentação, forma de fixação, aplicação, diagrama de blocos com os números (01), (02)…</p>
         <p class="nota">${p.natureza === 'MU' ? 'Modelo de utilidade: uma só reivindicação independente, descrevendo a forma ou disposição.' : 'Patente de invenção: pode ter mais de uma independente (ex.: produto e processo).'} Evite: etc., aproximadamente, preferencialmente, "conforme a figura".</p></div>
         ${rs.map((r, i) => `<div class="card reivindicacao"><div class="card-topo"><h3>${i + 1}.</h3><div class="botoes"><label class="campo-inline">tipo <select data-c="reivindicacoes.#${r.id}.dep"><option value="">independente</option>${rs.slice(0, i).map((x, j) => `<option value="${j + 1}" ${Number(r.dep) === j + 1 ? 'selected' : ''}>dependente da ${j + 1}</option>`).join('')}</select></label><button type="button" class="btn-icone" data-acao="subir-reiv" data-id="${r.id}" title="Subir" ${i ? '' : 'disabled'}>↑</button><button type="button" class="btn-icone" data-acao="remover" data-lista="reivindicacoes" data-id="${r.id}">✕</button></div></div>
             <p class="preambulo"><b>${esc(tituloPedido(p))}</b>${r.dep ? ' de acordo com a reivindicação ' + r.dep : ''} caracterizado por…</p>
@@ -252,11 +267,14 @@ PAGINAS.desenhos = {
 PAGINAS.resumo = {
     render(p) {
         const n = palavras(p.resumo);
-        return `${cabecalho('resumo', 'O resumo sintetiza a invenção em 50 a 200 palavras e indica a figura mais representativa. É o texto que aparece na publicação.')}
-        <div class="card"><div class="botoes"><button type="button" class="btn btn-secondary" data-acao="baixar-doc" data-doc="resumo">⬇ Baixar .docx</button></div>
+        return `${cabecalho('resumo', 'Comece por aqui: o resumo diz, em 50 a 200 palavras, o que é a invenção, como é composta (com os números de referência) e onde é aplicada. Junto com as reivindicações, ele pré-preenche o resto do pedido.')}
+        <div class="card"><div class="grade-campos">${campo('titulo', 'Título', { largo: true, dica: 'curto, técnico, sem marca — vai no topo de todos os documentos', ph: 'Ex.: Sistema de monitoramento de pressão para circuitos pneumáticos' })}</div>
+        <details class="nota" ${p.resumo ? '' : 'open'}><summary>Modelo para começar</summary><p>O presente ${nomeNatureza(p)} trata de <b>[o que é]</b> (FIGURA 1) com <b>[componente principal (01)]</b> que <b>[o que faz]</b>. <b>[Como funciona, citando (02), (03)…]</b>. Além disso, <b>[vantagem]</b>. Esse dispositivo será aplicado em <b>[aplicações]</b>.</p>
+        <button type="button" class="btn btn-secondary btn-sm" data-acao="modelo-resumo">Usar este modelo</button></details>
         <h3 class="titulo-doc">${esc(tituloPedido(p))}</h3>
         <div class="grade-campos">${campo('resumo', 'Resumo', { tipo: 'textarea', largo: true, linhas: 10, rasc: 'resumo', contar: true })}</div>
-        <div class="medidor ${n >= 50 && n <= 200 ? 'ok' : 'ruim'}"><i style="width:${Math.min(100, n / 2)}%"></i><span>${n} / 200 palavras</span></div>${alertas('resumo')}</div>`;
+        <div class="medidor ${n >= 50 && n <= 200 ? 'ok' : 'ruim'}"><i style="width:${Math.min(100, n / 2)}%"></i><span>${n} / 200 palavras</span></div>${alertas('resumo')}
+        <div class="botoes"><button type="button" class="btn btn-primary" data-acao="pre-preencher">⚡ Pré-preencher o pedido com o resumo e as reivindicações</button><button type="button" class="btn btn-secondary" data-acao="baixar-doc" data-doc="resumo">⬇ Baixar .docx</button></div></div>`;
     }
 };
 
@@ -287,7 +305,7 @@ PAGINAS.universidade = {
     render(p) {
         const u = p.universidade, f = p.ficha;
         const rad = (c, opts) => `<div class="radios">${opts.map(o => `<label class="campo-inline"><input type="radio" name="${c}" data-c="${c}" value="${escAttr(o)}" ${lerCaminho(p, c) === o ? 'checked' : ''}> ${esc(o)}</label>`).join('')}</div>`;
-        return `${cabecalho('universidade', 'Pela universidade, o pedido passa pelo escritório de propriedade intelectual (NIT). O orientador abre um processo sigiloso no SEI com o memorando e anexa os formulários e os 4 documentos. Quase tudo aqui já vem da ficha e das buscas.')}
+        return `${cabecalho('universidade', 'Pela universidade, o pedido passa pelo escritório de propriedade intelectual (NIT). O orientador abre um processo sigiloso no SEI com o memorando e anexa os formulários e os 4 documentos. Os campos abaixo já vêm pré-preenchidos com o resumo, as reivindicações, a ficha, o relatório e o retorno da busca: só confira.')}
         <div class="card"><h2>🏛️ Instituição (depositante)</h2><div class="grade-campos">${campo('universidade.nome', 'Nome')}${campo('universidade.sigla', 'Sigla')}${campo('universidade.cnpj', 'CNPJ')}${campo('universidade.unidade', 'Unidade (centro/faculdade)')}${campo('universidade.siglaUnidade', 'Sigla da unidade')}${campo('universidade.email', 'E-mail do escritório de PI')}${campo('universidade.endereco', 'Endereço', { largo: true })}</div></div>
         <div class="card"><div class="card-topo"><h2>5. Memorando (abertura de processo sigiloso)</h2><button type="button" class="btn btn-secondary btn-sm" data-acao="baixar-doc" data-doc="memorando">⬇ .docx</button></div><div class="grade-campos">${campo('universidade.memorando.numero', 'Nº do memorando')}${campo('universidade.memorando.ano', 'Ano')}${campo('universidade.memorando.data', 'Data', { tipo: 'date' })}${campo('universidade.destinatario', 'Destinatário', { largo: true })}</div><p class="nota">Assinado no SEI pelo notificante: ${esc((u.inventores.find(i => i.notificante) || {}).nome || '— defina em Inventores')}.</p></div>
         <div class="card"><div class="card-topo"><h2>6. Formulário de Informação Tecnológica</h2><button type="button" class="btn btn-secondary btn-sm" data-acao="baixar-doc" data-doc="infotec">⬇ .docx</button></div>

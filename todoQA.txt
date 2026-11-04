@@ -2,7 +2,7 @@
 
 TODO / QA — Apoio à Escrita de Patentes
 Marcadores: [fazer] [futuro] [resolvido] [rejeitado]
-Atualizado em 04/11/2026 (versão 1).
+Atualizado em 04/11/2026 (versão 2).
 
 === DIRETRIZES PERMANENTES
 - SIMPLES PARA QUALQUER ALUNO: quem nunca escreveu patente consegue usar sem manual. Antes de fechar um item: (1) dá para fazer
@@ -19,6 +19,9 @@ Atualizado em 04/11/2026 (versão 1).
 === O QUE FALTA
 1 [resolvido 04/11/2026] Fluxo do guia do INPI + universidade, jogo (missões, XP, níveis, medalhas), caderno de fontes,
   classificação por aproximação, buscas A–G a partir do .md, 8 documentos .docx, exemplos e testes.
+6 [resolvido 04/11/2026] Resumo e reivindicações viram as primeiras etapas e pré-preenchem ficha, termos, classes, desenhos,
+  relatório e formulários; retorno da busca colado vai para o Formulário de Busca; na busca, prompt e colagem vêm antes da busca à mão;
+  exemplo único (sistema de pressão).
 2 [futuro] Ampliar o catálogo IPC/CPC (hoje ~80 classes, foco em agro, eletrônica e controle).
 3 [futuro] Ler PDF direto como fonte (hoje: copiar e colar o texto).
 4 [futuro] Nuvem da equipe (MEGA), como no Projeto Conceitual, com senha e dados resguardados.
