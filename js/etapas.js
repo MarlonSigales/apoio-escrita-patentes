@@ -50,7 +50,7 @@ PAGINAS.inicio = {
         const pl = App.placar;
         const prox = proximaEtapa();
         const pct = pl.total ? Math.round(100 * pl.xp / pl.total) : 0;
-        return `${cabecalho('inicio', 'Escreva seu pedido de patente passo a passo, seguindo o Guia Básico do INPI e o caminho da universidade. Comece pelo <b>resumo</b> e pelas <b>reivindicações</b>: delas saem a ficha, as buscas, o relatório, os desenhos e os formulários. Cada missão cumprida dá XP. No fim, você recebe os 8 documentos prontos.')}
+        return `${cabecalho('inicio', 'Escreva seu pedido de patente passo a passo, seguindo o Guia Básico do INPI e o caminho da universidade. Comece pela ficha <b>Sua invenção</b>: dela saem o resumo, as reivindicações, as buscas, o relatório, os desenhos e os formulários da universidade. Cada missão cumprida dá XP. No fim, você recebe os 8 documentos prontos.')}
         <div class="painel-jogo card">
             <div class="nivel"><span class="nivel-icone">${pl.nivel[2]}</span><div><small>Seu nível</small><b>${esc(pl.nivel[1])}</b><span>${pl.xp} XP${pl.prox ? ` · faltam ${pl.prox[0] - pl.xp} XP para <b>${esc(pl.prox[1])}</b>` : ''}</span></div></div>
             <div class="barra-xp grande"><i style="width:${pct}%"></i></div><small>${pct}% do pedido completo</small>
@@ -62,7 +62,7 @@ PAGINAS.inicio = {
             <button type="button" class="opcao" data-acao="importar-md"><b>⇪ Tenho o prompt da busca (.md)</b><span>Preenche ficha, termos, classes e buscas a partir do prompt de anterioridade.</span></button>
             <button type="button" class="opcao" data-acao="importar-docx"><b>📄 Tenho um pedido em Word</b><span>Lê Relatório, Reivindicações, Desenhos e Resumo (.docx) e preenche tudo.</span></button>
             <button type="button" class="opcao" data-acao="exemplo" data-ex="pressao"><b>🧪 Ver exemplo completo</b><span>Sistema de monitoramento de pressão para circuitos pneumáticos.</span></button>
-            <a class="opcao" href="#/resumo"><b>✍️ Começar do zero</b><span>Escreva o resumo e as reivindicações: o app pré-preenche o resto.</span></a>
+            <button type="button" class="opcao" data-acao="novo"><b>🗑️ Começar do zero</b><span>Apaga tudo deste navegador e abre a ficha "Sua invenção" em branco.</span></button>
         </div></div>
         <div class="card"><h2>🏅 Medalhas</h2><div class="medalhas">${pl.medalhas.map(m => `<div class="medalha ${m.ok ? 'ganha' : ''}" title="${escAttr(m.desc)}"><span>${m.icone}</span><b>${esc(m.nome)}</b><small>${esc(m.desc)}</small></div>`).join('')}</div></div>
         <div class="card"><h2>O caminho</h2><ol class="trilha">${ETAPAS.filter(e => e.id !== 'inicio').map(e => { const st = estadoEtapa(pl, e.id); return `<li class="${st}"><a href="#/${e.id}">${e.icone} ${esc(e.titulo)}</a> <small>${pl.porEtapa[e.id] ? pl.porEtapa[e.id].feitas + '/' + pl.porEtapa[e.id].total : ''}</small></li>`; }).join('')}</ol></div>`;
@@ -102,9 +102,13 @@ PAGINAS.entenda = {
 PAGINAS.ficha = {
     render(p) {
         const f = p.ficha;
-        return `${cabecalho('ficha', 'Esta ficha já vem pré-preenchida pelo resumo e pelas reivindicações. Confira e complete (principalmente o problema e o que existe hoje): ela alimenta a classificação, as buscas, o relatório, os desenhos e os formulários da universidade.')}
+        return `${cabecalho('ficha', 'Comece por aqui. Conte a invenção com as suas palavras: desta ficha saem os rascunhos do resumo e das reivindicações, a classificação, os termos das buscas, o relatório, os desenhos e os formulários da universidade. Se você já tem o resumo e as reivindicações escritos, cole-os nas abas deles: a ficha é completada a partir deles.')}
+        <div class="card"><div class="botoes"><button type="button" class="btn btn-primary" data-acao="pre-preencher">⚡ Pré-preencher as outras abas com esta ficha</button></div>
+        <p class="nota">O pré-preenchimento também acontece sozinho quando você abre as próximas abas. Ele só completa o que está vazio.</p></div>
         <div class="card"><div class="grade-campos">
             ${campo('titulo', 'Título', { largo: true, dica: 'curto, técnico, sem marca' })}
+            ${campo('natureza', 'Tipo de pedido', { tipo: 'select', opts: [['', '— escolher (veja a aba Entenda) —'], ['PI', 'Patente de invenção (PI)'], ['MU', 'Modelo de utilidade (MU)']] })}
+            ${campo('contexto.inventores', 'Inventores (um por linha)', { tipo: 'textarea', linhas: 3, dica: 'vão para a aba Inventores' })}
             ${campo('area', 'Área técnica', { ph: 'Ex.: máquinas agrícolas, eletrônica embarcada' })}
             ${campo('contexto.instituicao', 'Instituição')}
             ${campo('ficha.campo', 'Para que serve (campo da invenção)', { tipo: 'textarea', largo: true, linhas: 2, ph: 'Ex.: um sistema eletrônico para monitorar a pressão de circuitos pneumáticos' })}
@@ -238,7 +242,7 @@ PAGINAS.relatorio = {
 PAGINAS.reivindicacoes = {
     render(p) {
         const rs = p.reivindicacoes;
-        return `${cabecalho('reivindicacoes', 'Logo depois do resumo: as reivindicações definem o que fica protegido. Cada uma é uma única frase. O app escreve o começo (título + “caracterizado por”) e usa o texto delas para pré-preencher a ficha, as buscas e o relatório.')}
+        return `${cabecalho('reivindicacoes', 'As reivindicações definem o que fica protegido. Cada uma é uma única frase. O rascunho vem da ficha (solução e componentes); o app escreve o começo (título + “caracterizado por”) e usa o texto delas para completar as buscas e o relatório.')}
         <div class="card"><div class="botoes">${!rs.length && p.ficha.componentes.length ? '<button type="button" class="btn btn-secondary" data-acao="rascunho-reivindicacoes">✨ Montar a partir dos componentes</button>' : ''}<button type="button" class="btn btn-secondary" data-acao="add-reivindicacao">＋ Reivindicação</button><button type="button" class="btn btn-primary" data-acao="pre-preencher">⚡ Pré-preencher o pedido</button><button type="button" class="btn btn-secondary" data-acao="baixar-doc" data-doc="reivindicacoes">⬇ Baixar .docx</button></div>
         <p class="nota">A <b>1ª reivindicação</b> diz o essencial da invenção (o que não pode faltar). As <b>dependentes</b> acrescentam um detalhe cada: alimentação, forma de fixação, aplicação, diagrama de blocos com os números (01), (02)…</p>
         <p class="nota">${p.natureza === 'MU' ? 'Modelo de utilidade: uma só reivindicação independente, descrevendo a forma ou disposição.' : 'Patente de invenção: pode ter mais de uma independente (ex.: produto e processo).'} Evite: etc., aproximadamente, preferencialmente, "conforme a figura".</p></div>
@@ -267,7 +271,7 @@ PAGINAS.desenhos = {
 PAGINAS.resumo = {
     render(p) {
         const n = palavras(p.resumo);
-        return `${cabecalho('resumo', 'Comece por aqui: o resumo diz, em 50 a 200 palavras, o que é a invenção, como é composta (com os números de referência) e onde é aplicada. Junto com as reivindicações, ele pré-preenche o resto do pedido.')}
+        return `${cabecalho('resumo', 'O resumo diz, em 50 a 200 palavras, o que é a invenção, como é composta (com os números de referência) e onde é aplicada. Ele já vem como rascunho da ficha "Sua invenção"; revise. Junto com as reivindicações, ele completa o que faltar no resto do pedido.')}
         <div class="card"><div class="grade-campos">${campo('titulo', 'Título', { largo: true, dica: 'curto, técnico, sem marca — vai no topo de todos os documentos', ph: 'Ex.: Sistema de monitoramento de pressão para circuitos pneumáticos' })}</div>
         <details class="nota" ${p.resumo ? '' : 'open'}><summary>Modelo para começar</summary><p>O presente ${nomeNatureza(p)} trata de <b>[o que é]</b> (FIGURA 1) com <b>[componente principal (01)]</b> que <b>[o que faz]</b>. <b>[Como funciona, citando (02), (03)…]</b>. Além disso, <b>[vantagem]</b>. Esse dispositivo será aplicado em <b>[aplicações]</b>.</p>
         <button type="button" class="btn btn-secondary btn-sm" data-acao="modelo-resumo">Usar este modelo</button></details>

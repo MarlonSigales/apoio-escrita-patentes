@@ -22,6 +22,15 @@ function ok(cond, nome) { RES.push([!!cond, nome]); }
     ok(n.desenhos.length >= 1 && n.relatorio.campo && n.relatorio.descricao, 'e os desenhos e o relatório');
     ok(n.universidade.objetoProjeto && n.universidade.aplicacoesIndustriais, 'e os formulários da universidade');
     ok(autoPreencher(n).length === 0, 'não repreenche o que já preencheu');
+    // cadeia inversa: só a ficha → resumo e reivindicações
+    const fi = normalizarPedido(pedidoVazio());
+    Object.assign(fi, { natureza: 'MU', titulo: p.titulo });
+    Object.assign(fi.ficha, { campo: p.ficha.campo, solucao: p.ficha.solucao, componentes: p.ficha.componentes.slice(0, 4), aplicacoes: p.ficha.aplicacoes });
+    autoPreencher(fi);
+    ok(fi.resumo && fi.reivindicacoes.length >= 2 && fi.relatorio.campo && fi.universidade.objetoProjeto, 'a ficha pré-preenche resumo, reivindicações, relatório e universidade');
+    ok(ETAPAS[1].id === 'ficha', '"Sua invenção" é a primeira aba depois do Início');
+    const vz = normalizarPedido(pedidoVazio());
+    ok(autoPreencher(vz).length === 0, 'pedido vazio continua vazio');
     const ret = lerRetornoBusca(RETORNO_EXEMPLO);
     ok(ret.registro.length === 6 && ret.registro.some(r => r.base === 'inpi' && r.n === 1843), 'lê contagens "palavra / nº" por base');
     ok(ret.resultados.length === 2 && ret.achou === false && /manômetros/.test(ret.nota), 'lê documentos, resultado e nota do retorno');

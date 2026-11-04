@@ -13,11 +13,11 @@ const algum = t => String(t || '').trim().length > 0;
 /** Etapas na ordem do guia. grupo = título no menu. */
 const ETAPAS = [
     { id: 'inicio', grupo: 'Comece aqui', titulo: 'Painel do inventor', icone: '🏠' },
-    { id: 'entenda', grupo: '1. Entenda', titulo: 'Entenda: PI ou MU?', icone: '📘', guia: 'Entenda' },
+    { id: 'ficha', grupo: '1. Sua invenção', titulo: 'Sua invenção', icone: '💡' },
+    { id: 'entenda', grupo: '1. Sua invenção', titulo: 'Entenda: PI ou MU?', icone: '📘', guia: 'Entenda' },
+    { id: 'fontes', grupo: '1. Sua invenção', titulo: 'Caderno de fontes', icone: '📚' },
     { id: 'resumo', grupo: '2. O núcleo do pedido', titulo: 'Resumo', icone: '✂️' },
     { id: 'reivindicacoes', grupo: '2. O núcleo do pedido', titulo: 'Reivindicações', icone: '⚖️' },
-    { id: 'ficha', grupo: '2. O núcleo do pedido', titulo: 'Sua invenção (conferir)', icone: '💡' },
-    { id: 'fontes', grupo: '2. O núcleo do pedido', titulo: 'Caderno de fontes', icone: '📚' },
     { id: 'classificacao', grupo: '3. Faça buscas', titulo: 'Classificação', icone: '🧭', guia: 'Faça buscas' },
     { id: 'buscas', grupo: '3. Faça buscas', titulo: 'Buscas de anterioridade', icone: '🔎', guia: 'Faça buscas' },
     { id: 'relatorio', grupo: '4. Escreva o restante', titulo: 'Relatório descritivo', icone: '📝', guia: 'Inicie o pedido' },

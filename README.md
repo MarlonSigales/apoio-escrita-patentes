@@ -11,7 +11,8 @@ local, com `python3 -m http.server`.
 
 1. **Jogo de missões.** Cada etapa tem missões que dão XP. O XP sobe o nível, de Curioso(a) até Inventor(a) completo(a), e os marcos dão medalhas.
    O XP é calculado do próprio pedido: se você apagar um texto, perde os pontos.
-2. **Começa pelo resumo e pelas reivindicações.** São as primeiras etapas depois do "Entenda". O texto delas pré-preenche, em cadeia:
+2. **Começa pela ficha "Sua invenção".** É a primeira aba depois do Início. Dela saem os rascunhos do **resumo** e das **reivindicações**.
+   Quem já tem o resumo e as reivindicações escritos pode colá-los: o app completa a ficha a partir deles. Juntos, eles pré-preenchem, em cadeia:
    - a ficha (campo, solução, componentes numerados, vantagens, aplicações);
    - os termos e as classes da busca;
    - os desenhos (quantas figuras há e as legendas);
@@ -66,6 +67,7 @@ local, com `python3 -m http.server`.
 - Tudo fica **no navegador**: o texto no `localStorage` e as figuras no IndexedDB. Nada vai para um servidor.
 - O ZIP final leva os 8 documentos, o `pedido.json`, as imagens e o prompt `.md`. Para continuar o pedido, abra o ZIP em "Abrir pedido".
 - O CPF, o endereço e o telefone dos inventores entram só nos formulários da universidade. **Não publique o ZIP** nem cole esses dados numa IA.
+- "Começar do zero" (no Painel ou em Mais opções) apaga o pedido, as fontes e as figuras deste navegador.
 - O exemplo é o sistema de monitoramento de pressão para circuitos pneumáticos, com o retorno da busca colado do formulário. Os inventores do exemplo são fictícios.
 
 ## Estrutura do código

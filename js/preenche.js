@@ -49,6 +49,18 @@ function autoPreencher(p) {
     if (ind) put('ficha.solucao', `${primeiraMinuscula(p.titulo || 'a invenção')} caracterizado por ${semFinal(ind.texto)}`, 'solução');
     if (rs.length > 1) put('ficha.vantagens', rs.filter(r => r.dep).slice(0, 3).map(r => semFinal(r.texto)).join('; '), 'vantagens');
 
+    // 1b) ficha → resumo e reivindicações (quando o aluno começou pela ficha)
+    const f0 = p.ficha;
+    const fichaTem = !!(f0.campo.trim() || f0.solucao.trim()) && !!p.titulo.trim();
+    if (fichaTem && !p.resumo.trim() && !p.autoFeito.resumo) {
+        const t = RASCUNHOS.resumo(p);
+        if (t) { p.resumo = t; p.autoFeito.resumo = 1; feito.push('resumo'); }
+    }
+    if (fichaTem && (f0.solucao.trim() || f0.componentes.length) && !p.reivindicacoes.some(r => r.texto.trim()) && !p.autoFeito.reivindicacoes) {
+        p.reivindicacoes = rascunhoReivindicacoes(p); p.autoFeito.reivindicacoes = 1; feito.push(p.reivindicacoes.length + ' reivindicações');
+    }
+    if (!p.contexto.depositante && p.contexto.instituicao && !p.autoFeito.depositante) { p.contexto.depositante = p.contexto.instituicao; p.autoFeito.depositante = 1; }
+
     // 2) ficha → busca (termos) e classificação
     const antes = JSON.stringify(p.busca.termos);
     if (!p.autoFeito.termos && (p.titulo || p.ficha.solucao)) { preencherTermos(p); if (JSON.stringify(p.busca.termos) !== antes) { p.autoFeito.termos = 1; feito.push('termos da busca'); } }
@@ -87,7 +99,7 @@ function autoPreencher(p) {
     const empresas = [f.concorrentes, ...new Set(p.busca.resultados.map(x => x.depositante).filter(Boolean))].filter(Boolean).join('; ');
     put('universidade.empresasMercado', empresas, 'formulário 2.4');
     if (p.titulo) put('universidade.objetoProjeto', `O desenvolvimento do ${maiusculo(p.titulo)} faz parte de ${{ TCC: 'um Trabalho de Conclusão de Curso', Tese: 'uma Tese', 'Dissertação': 'uma Dissertação', Pesquisa: 'um projeto de pesquisa', 'Extensão': 'um projeto de extensão' }[u.tipoProjeto] || 'um projeto'}${f.campo ? ' e tem o objetivo de oferecer ' + primeiraMinuscula(f.campo) : ''}.`, 'objeto do projeto');
-    put('universidade.memorando.data', hojeISO(), 'data do memorando');
+    if (p.titulo) put('universidade.memorando.data', hojeISO(), 'data do memorando');
     if (!u.areasAbrangidas.length && !p.autoFeito.areas) {
         const subs = classesBusca(p).map(subclasse);
         const a = new Set();

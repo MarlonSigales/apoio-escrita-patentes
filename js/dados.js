@@ -152,6 +152,12 @@ const Imagens = {
             return await new Promise(ok => { const r = db.transaction('img').objectStore('img').get(id); r.onsuccess = () => ok(r.result || null); r.onerror = () => ok(null); });
         } catch (e) { return null; }
     },
+    /** Apaga todas as figuras guardadas (usado ao começar do zero). */
+    async limpar() {
+        for (const u of Object.values(this._urls)) URL.revokeObjectURL(u);
+        this._urls = {};
+        try { const db = await this.abrir(); await new Promise(ok => { const t = db.transaction('img', 'readwrite'); t.objectStore('img').clear(); t.oncomplete = ok; t.onerror = ok; }); } catch (e) { /* sem IndexedDB */ }
+    },
     _urls: {},
     async url(id) {
         if (this._urls[id]) return this._urls[id];

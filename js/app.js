@@ -109,7 +109,7 @@ async function hidratarImagens() {
 function rota() {
     const id = (location.hash.match(/^#\/([\w-]+)/) || [])[1] || 'inicio';
     App.pagina = PAGINAS[id] ? id : 'inicio';
-    if (['ficha', 'classificacao', 'buscas', 'relatorio', 'desenhos', 'inventores', 'universidade', 'revisao', 'entrega'].includes(App.pagina) && (App.p.resumo.trim() || App.p.reivindicacoes.length)) {
+    if (App.pagina !== 'inicio' && App.pagina !== 'ficha' && temBase(App.p)) {
         const feito = autoPreencher(App.p);
         if (feito.length) { salvar(); atualizarPlacar(); avisar('⚡ Pré-preenchido com o que você já escreveu: ' + feito.slice(0, 6).join(', ') + (feito.length > 6 ? '…' : ''), 'ok', 6000); }
     }
@@ -260,9 +260,17 @@ const ACOES = {
         App.placar = null; salvar(); atualizarPlacar(false); location.hash = '#/inicio'; renderPagina();
         avisar('Exemplo carregado. Explore as etapas!');
     },
-    'novo'() {
-        if (temConteudo() && !confirm('Começar um pedido novo? O atual será apagado deste navegador (baixe o ZIP antes).')) return;
-        App.p = normalizarPedido(pedidoVazio()); App.placar = null; salvar(); atualizarPlacar(false); location.hash = '#/inicio'; renderPagina();
+    'novo': async () => {
+        if (temConteudo() && !confirm('Apagar tudo e começar do zero? O pedido atual, as fontes e as figuras serão apagados deste navegador (baixe o ZIP antes se quiser guardar).')) return;
+        clearTimeout(App._t); clearTimeout(App._tp);
+        Armazem.apagar();
+        await Imagens.limpar();
+        App.p = normalizarPedido(pedidoVazio());
+        Armazem.salvar(App.p);
+        App.placar = null; atualizarPlacar(false);
+        $('#topbar-selo').textContent = 'pedido novo';
+        if (location.hash === '#/ficha') renderPagina(); else location.hash = '#/ficha';
+        avisar('Tudo limpo. Comece pela ficha "Sua invenção".', 'ok', 5000);
     },
     'abrir': async () => {
         const [a] = await escolherArquivo('.zip,.json');
@@ -343,6 +351,8 @@ document.addEventListener('click', e => {
     if (f) { e.preventDefault(); f(el); }
 });
 
+/** Há de onde pré-preencher? (ficha da invenção, resumo ou reivindicações) */
+function temBase(p) { const f = p.ficha; return !!(f.campo.trim() || f.solucao.trim() || f.problema.trim() || f.componentes.length || p.resumo.trim() || p.reivindicacoes.some(r => r.texto.trim())); }
 function temConteudo() { const p = App.p; return !!(p.titulo || p.ficha.solucao || p.reivindicacoes.length || p.resumo); }
 
 // ------------------------------------------------------------ caderno lateral (perguntar às fontes)
