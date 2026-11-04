@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<!-- © 2026 Apoio à Escrita de Patentes — Inova Agro UFPel EMBRAPII. Todos os direitos reservados; copiar, reproduzir ou alterar exige autorização do autor (ver LICENSE). -->
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apoio à Escrita de Patentes</title>
+    <meta name="description" content="Escreva seu pedido de patente passo a passo (Guia Básico do INPI), com buscas de anterioridade, classificação por aproximação, caderno de fontes e os 8 documentos prontos para a universidade e o INPI.">
+    <link rel="icon" type="image/png" href="img/icone-instagri.png">
+    <link rel="apple-touch-icon" href="img/icone-instagri-180.png">
+    <link rel="stylesheet" href="css/style.css?v=20261104a">
+    <link rel="stylesheet" href="css/patentes.css?v=20261104a">
+</head>
+<body>
+    <header class="topbar">
+        <button type="button" class="sidebar-toggle" aria-label="Abrir o menu de etapas"></button>
+        <a href="#/inicio" class="topbar-marca" title="Painel">
+            <img src="img/logo-instagri.png" alt="" height="36">
+            <span>Apoio à Escrita de Patentes</span>
+        </a>
+        <span class="topbar-projeto"><span id="topbar-projeto-nome">Sem título</span></span>
+        <span class="xp-topo" id="xp-topo"></span>
+        <span class="topbar-selo" id="topbar-selo" title="Os dados ficam guardados neste navegador">guardado no navegador</span>
+        <button type="button" class="btn btn-secondary topbar-caderno" data-acao="abrir-caderno" title="Perguntar às suas fontes">📚 Caderno</button>
+        <button type="button" class="btn btn-primary topbar-zip" data-acao="baixar-tudo" title="Baixar os 8 documentos e o projeto">⬇ 8 documentos</button>
+    </header>
+
+    <div class="app-corpo">
+        <aside class="sidebar" id="sidebar">
+            <nav id="sidebar-nav" aria-label="Etapas do pedido"></nav>
+            <div class="sidebar-arquivo">
+                <span class="sidebar-arquivo-rotulo">Arquivo do pedido</span>
+                <button type="button" class="sidebar-arquivo-btn" data-acao="baixar-tudo">⬇ Baixar ZIP (8 documentos)</button>
+                <details class="sidebar-arquivo-mais">
+                    <summary>Mais opções</summary>
+                    <div>
+                        <button type="button" class="sidebar-arquivo-link" data-acao="abrir">📂 Abrir pedido (.zip ou .json)</button>
+                        <button type="button" class="sidebar-arquivo-link" data-acao="importar-md">⇪ Importar prompt de busca (.md)</button>
+                        <button type="button" class="sidebar-arquivo-link" data-acao="importar-docx">📄 Importar pedido em Word (.docx)</button>
+                        <button type="button" class="sidebar-arquivo-link" data-acao="exemplo" data-ex="pressao">🧪 Exemplo completo</button>
+                        <button type="button" class="sidebar-arquivo-link" data-acao="novo">✚ Novo pedido</button>
+                        <button type="button" class="sidebar-arquivo-link" data-acao="tour">❓ Como usar (tour)</button>
+                    </div>
+                </details>
+            </div>
+        </aside>
+        <div class="sidebar-fundo" data-acao="fechar-menu"></div>
+
+        <div class="app-conteudo">
+            <main class="main-content" id="app" tabindex="-1"></main>
+            <nav class="etapa-nav" id="etapa-nav" aria-label="Navegação entre etapas"></nav>
+            <footer class="footer">
+                <div class="container">
+                    <div class="footer-logos">
+                        <img src="img/logo-inovaagro.png" alt="EMBRAPII - Inova Agro - UFPel" height="64">
+                        <img src="img/logo-nimeq.png" alt="NIMEq" height="64">
+                        <img src="img/logo-instagri.png" alt="Laboratório de Instrumentação Agrícola - UFPel" height="64">
+                    </div>
+                    <p>Passos baseados no <a href="https://www.gov.br/inpi/pt-br/servicos/patentes/guia-basico" target="_blank" rel="noopener">Guia Básico de Patentes do INPI</a>. Ferramenta de apoio: não substitui a análise do escritório de propriedade intelectual nem de um agente de PI.</p>
+                    <p class="footer-credits"><strong>Desenvolvedor:</strong> Marlon Soares Sigales · <strong>Equipe Inova Agro - UFPel - EMBRAPII</strong></p>
+                    <p class="footer-credits">© 2026 Marlon Sigales. Todos os direitos reservados: copiar, reproduzir ou alterar o código exige autorização do autor.</p>
+                </div>
+            </footer>
+        </div>
+
+        <aside class="caderno" id="caderno" aria-label="Caderno de fontes">
+            <div class="caderno-topo"><b>📚 Caderno de fontes</b><button type="button" class="btn-icone" id="caderno-fechar" title="Fechar">✕</button></div>
+            <input type="search" id="caderno-q" placeholder="Pergunte às suas fontes…">
+            <div id="caderno-corpo"></div>
+        </aside>
+    </div>
+
+    <div class="aviso-flutuante" id="aviso" role="status" aria-live="polite"></div>
+    <input type="file" id="arq" hidden>
+
+    <script src="lib/jszip.min.js"></script>
+    <script src="js/dados.js?v=20261104a"></script>
+    <script src="js/ipc.js?v=20261104a"></script>
+    <script src="js/buscas.js?v=20261104a"></script>
+    <script src="js/fontes.js?v=20261104a"></script>
+    <script src="js/redacao.js?v=20261104a"></script>
+    <script src="js/documentos.js?v=20261104a"></script>
+    <script src="js/jogo.js?v=20261104a"></script>
+    <script src="js/exemplo.js?v=20261104a"></script>
+    <script src="js/etapas.js?v=20261104a"></script>
+    <script src="js/app.js?v=20261104a"></script>
+</body>
+</html>
