@@ -79,16 +79,37 @@ function rascunhoReivindicacoes(p) {
     const out = [];
     const essenciais = f.componentes.slice(0, Math.min(4, f.componentes.length));
     const ind = f.solucao ? primeiraMinuscula(f.solucao) : '';
-    out.push({ id: uid(), dep: null, texto: (ind || 'compreender ' + listaComE(essenciais.map(comNum))) + (ind && essenciais.length ? ', compreendendo ' + listaComE(essenciais.map(comNum)) : '') });
-    for (const c of f.componentes.slice(essenciais.length)) out.push({ id: uid(), dep: 1, texto: `compreender ${comNum(c)}${c.funcao ? ' para ' + primeiraMinuscula(c.funcao) : ''}` });
-    if (f.aplicacoes) out.push({ id: uid(), dep: 1, texto: `ser aplicado em ${primeiraMinuscula(f.aplicacoes)}` });
+    out.push({ id: uid(), dep: null, preambulo: '', expressao: '', texto: (ind || 'compreender ' + listaComE(essenciais.map(comNum))) + (ind && essenciais.length ? ', compreendendo ' + listaComE(essenciais.map(comNum)) : '') });
+    for (const c of f.componentes.slice(essenciais.length)) out.push({ id: uid(), dep: 1, preambulo: '', expressao: '', texto: `compreender ${comNum(c)}${c.funcao ? ' para ' + primeiraMinuscula(c.funcao) : ''}` });
+    if (f.aplicacoes) out.push({ id: uid(), dep: 1, preambulo: '', expressao: '', texto: `ser aplicado em ${primeiraMinuscula(f.aplicacoes)}` });
     return out;
 }
 
 /** Texto completo de uma reivindicação, como vai para o documento. */
+const EXPRESSOES = ['caracterizado por', 'caracterizada por', 'caracterizado pelo fato de', 'caracterizada pelo fato de'];
+
+/** Preâmbulo da reivindicação: o título inteiro (padrão) ou a parte do título que o aluno escolher. */
+function preambuloReiv(p, r) { return maiusculo(String(r.preambulo || '').trim() || p.titulo || 'TÍTULO DO PEDIDO'); }
+/** "caracterizado" ou "caracterizada" conforme a primeira palavra do preâmbulo (sistema → o; máquina → a). */
+function expressaoReiv(p, r) {
+    if (r.expressao) return r.expressao;
+    const w = semAcento(preambuloReiv(p, r).split(/\s+/)[0]);
+    const fem = /(cao|sao|gem|dade|tude|ura|ia|a)$/.test(w) && !/(sistema|problema|esquema|programa|dia|mapa|tema|clima)$/.test(w);
+    return fem ? 'caracterizada por' : 'caracterizado por';
+}
+/** Opções de preâmbulo: partes do título (1, 2, 3… palavras) até o título completo. */
+function partesDoTitulo(p) {
+    const ws = String(p.titulo || '').trim().split(/\s+/).filter(Boolean);
+    const out = [];
+    for (let n = 1; n <= ws.length; n++) { if (/^(de|da|do|das|dos|para|com|e|em|a|o)$/i.test(ws[n - 1]) && n < ws.length) continue; out.push(maiusculo(ws.slice(0, n).join(' '))); }
+    return [...new Set(out)];
+}
+function trechoDependencia(r) { return r.dep ? ` de acordo com a reivindicação ${r.dep}` : ''; }
+
+/** Texto completo de uma reivindicação, como vai para o documento: PREÂMBULO [de acordo com a reivindicação N] caracterizado por … */
 function textoReivindicacao(p, r) {
-    const t = String(r.texto || '').trim().replace(/\.+$/, '').replace(/^caracterizad[oa]\s+(por|pelo|pela)\s+/i, '');
-    return `${tituloPedido(p)}${r.dep ? ' de acordo com a reivindicação ' + r.dep : ''} caracterizado por ${t}.`;
+    const t = String(r.texto || '').trim().replace(/\.+$/, '').replace(/^caracterizad[oa]\s+(por|pelo|pela|pelo fato de)\s+/i, '');
+    return `${preambuloReiv(p, r)}${trechoDependencia(r)} ${expressaoReiv(p, r)} ${t}.`;
 }
 
 // ------------------------------------------------------------ verificações
@@ -122,6 +143,9 @@ function verificar(p) {
         if (/\b(etc|aproximadamente|preferencialmente|tipo|como por exemplo|e\/ou)\b/i.test(t)) add('aviso', 'reivindicacoes', `Reivindicação ${i + 1}: evite termos vagos (etc., aproximadamente, preferencialmente, tipo, e/ou).`);
         if (/conforme (descrito|mostrado)|de acordo com a figura|vide figura/i.test(t)) add('aviso', 'reivindicacoes', `Reivindicação ${i + 1}: não remeta ao relatório ou às figuras; descreva a característica.`);
         for (const n of numerosNoTexto(t)) if (nums.size && !nums.has(n)) add('aviso', 'reivindicacoes', `Reivindicação ${i + 1}: o número (${n}) não está na lista de componentes.`);
+        if (x.preambulo && p.titulo && !semAcento(p.titulo).startsWith(semAcento(x.preambulo).trim())) add('aviso', 'reivindicacoes', `Reivindicação ${i + 1}: o preâmbulo "${x.preambulo}" não é o título nem o começo dele.`);
+        if (x.dep) { const mae = rs[x.dep - 1]; if (mae && semAcento(preambuloReiv(p, x)) !== semAcento(preambuloReiv(p, mae)) && !semAcento(preambuloReiv(p, mae)).startsWith(semAcento(preambuloReiv(p, x)))) add('aviso', 'reivindicacoes', `Reivindicação ${i + 1}: o preâmbulo deve repetir o da reivindicação ${x.dep}.`); }
+        if (!t.trim()) add('aviso', 'reivindicacoes', `Reivindicação ${i + 1}: falta a característica (o que vem depois de "${expressaoReiv(p, x)}").`);
     });
     // desenhos
     if (p.natureza === 'MU' && !p.desenhos.length) add('erro', 'desenhos', 'Modelo de utilidade: os desenhos são obrigatórios.');

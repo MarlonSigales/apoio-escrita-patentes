@@ -39,7 +39,14 @@ local, com `python3 -m http.server`.
    à IA para **parar e pedir ao usuário que resolva CAPTCHAs e logins manualmente**.
 5. **Classificação por aproximação.** O app compara as palavras da ficha com um catálogo resumido da IPC/CPC e marca as classes
    mais próximas, mostrando a % de semelhança e o porquê. O aluno confere cada classe no navegador CPC do Espacenet antes de usar.
-6. **Regras do INPI verificadas.** O app confere estes pontos:
+6. **Reivindicações em 4 campos.** Cada reivindicação é montada assim:
+   1. o título, ou uma parte dele, escolhida numa lista com as partes do título;
+   2. "de acordo com a reivindicação N", só nas dependentes;
+   3. a palavra-chave "caracterizado por", que vira "caracterizada por" quando o título é feminino; também dá para escolher "…pelo fato de";
+   4. a característica.
+
+   Há botões "＋ Independente", "＋ Dependente" e "＋ Dependente desta". A numeração e as dependências se ajustam ao inserir, subir ou remover uma reivindicação, e a prévia da frase atualiza enquanto o aluno digita.
+7. **Regras do INPI verificadas.** O app confere estes pontos:
    - o título é o mesmo em todos os documentos;
    - as reivindicações usam "caracterizado por" e cada uma é uma única frase;
    - o modelo de utilidade tem uma só reivindicação independente;
@@ -47,7 +54,7 @@ local, com `python3 -m http.server`.
    - os números de referência batem entre os documentos;
    - os desenhos existem (obrigatórios para MU);
    - o período de graça de 12 meses é respeitado.
-7. **Os 8 documentos no fim**, todos em Word (.docx):
+8. **Os 8 documentos no fim**, todos em Word (.docx):
 
    | # | Documento | Para |
    |---|-----------|------|

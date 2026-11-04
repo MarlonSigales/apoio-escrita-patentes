@@ -36,6 +36,12 @@ function ok(cond, nome) { RES.push([!!cond, nome]); }
     ok(ret.resultados.length === 2 && ret.achou === false && /manômetros/.test(ret.nota), 'lê documentos, resultado e nota do retorno');
     const tab = lerRetornoBusca('| Base | Sequência exata | Resultados | Triados |\n|---|---|---|---|\n| Espacenet | ctxt = "pressure sensor" | 34 | 25 |\n\n| Registro | Nome | Resumo | Nível de proximidade |\n|---|---|---|---|\n| BR 10 2016 023064 B1 | Dosador | x | Alta |');
     ok(tab.registro[0].base === 'espacenet' && tab.registro[0].n === 34 && tab.resultados[0].relevancia === 4, 'lê tabelas em Markdown do retorno');
+    const rp = normalizarPedido(pedidoVazio()); rp.titulo = 'Máquina dosadora de sementes';
+    ok(textoReivindicacao(rp, { dep: null, preambulo: '', expressao: '', texto: 'ter um rotor' }) === 'MÁQUINA DOSADORA DE SEMENTES caracterizada por ter um rotor.', 'palavra-chave concorda com o título (caracterizada)');
+    ok(textoReivindicacao(rp, { dep: 1, preambulo: 'Máquina', expressao: '', texto: 'ter motor.' }) === 'MÁQUINA de acordo com a reivindicação 1 caracterizada por ter motor.', 'preâmbulo com parte do título + de acordo com');
+    ok(partesDoTitulo(rp).join('|') === 'MÁQUINA|MÁQUINA DOSADORA|MÁQUINA DOSADORA DE SEMENTES', 'sugere partes do título');
+    const lida = lerPedidoExistente('REIVINDICAÇÕES\n1. MÁQUINA X caracterizada por ter A.\n2. MÁQUINA de acordo com a reivindicação 1, caracterizada pelo fato de ter B.').reivindicacoes;
+    ok(lida[0].preambulo === '' && lida[1].preambulo === 'MÁQUINA' && lida[1].dep === 1 && lida[1].expressao === 'caracterizada pelo fato de', 'lê preâmbulo, dependência e palavra-chave de um .docx');
     ok(gerarBuscas(p).some(b => b.base === 'espacenet') && gerarBuscas(p).some(b => b.base === 'inpi'), 'gera buscas para Espacenet e INPI');
     const md = gerarMD(p);
     ok(/manualmente/.test(md), 'prompt .md manda pedir CAPTCHA manualmente');

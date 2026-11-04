@@ -105,9 +105,17 @@ function lerPedidoExistente(texto) {
         r.tipo = 'reivindicacoes';
         r.reivindicacoes = [];
         for (const l of linhas.slice(1).map(sem)) {
-            const m = l.match(/^(?:\d+\s*[.)-]\s*)?(.+?)\s+(de acordo com a reivindica[çc][ãa]o\s+(\d+)[,]?\s*)?caracterizad[oa]\s+(?:por|pelo|pela|em)\s*(.+)$/i);
-            if (m) { r.titulo = r.titulo || m[1].replace(/,\s*$/, ''); r.reivindicacoes.push({ dep: m[3] ? Number(m[3]) : null, texto: m[4].replace(/\.$/, '') }); }
+            const m = l.match(/^(?:\d+\s*[.)-]\s*)?(.+?),?\s+(de acordo com (?:a|as) reivindica[çc](?:[ãa]o|[õo]es)\s+(\d+)[^,]*?[,]?\s*)?(caracterizad[oa]\s+(?:pelo fato de|por|pelo|pela|em))\s*(.+)$/i);
+            if (m) {
+                const pre = m[1].replace(/,\s*$/, '').trim();
+                if (!r.titulo || pre.length > r.titulo.length) r.titulo = pre;   // o preâmbulo mais longo é o título completo
+                const expr = m[4].toLowerCase().replace(/\s+/g, ' ');
+                r.reivindicacoes.push({ dep: m[3] ? Number(m[3]) : null, preambulo: pre, expressao: EXPRESSOES.includes(expr) ? expr : '', texto: m[5].replace(/\.$/, '') });
+            }
         }
+        // o preâmbulo igual ao título fica vazio (= título completo)
+        for (const x of r.reivindicacoes) if (r.titulo && semAcento(x.preambulo) === semAcento(r.titulo)) x.preambulo = '';
+        for (const x of r.reivindicacoes) if (x.expressao === 'caracterizado por' || x.expressao === 'caracterizada por') x.expressao = '';
     } else if (/^resumo/.test(topo)) {
         r.tipo = 'resumo';
         r.titulo = linhas[1] && linhas[1] === maiusculo(linhas[1]) ? linhas[1] : '';

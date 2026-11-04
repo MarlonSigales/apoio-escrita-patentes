@@ -242,14 +242,31 @@ PAGINAS.relatorio = {
 PAGINAS.reivindicacoes = {
     render(p) {
         const rs = p.reivindicacoes;
-        return `${cabecalho('reivindicacoes', 'As reivindicações definem o que fica protegido. Cada uma é uma única frase. O rascunho vem da ficha (solução e componentes); o app escreve o começo (título + “caracterizado por”) e usa o texto delas para completar as buscas e o relatório.')}
-        <div class="card"><div class="botoes">${!rs.length && p.ficha.componentes.length ? '<button type="button" class="btn btn-secondary" data-acao="rascunho-reivindicacoes">✨ Montar a partir dos componentes</button>' : ''}<button type="button" class="btn btn-secondary" data-acao="add-reivindicacao">＋ Reivindicação</button><button type="button" class="btn btn-primary" data-acao="pre-preencher">⚡ Pré-preencher o pedido</button><button type="button" class="btn btn-secondary" data-acao="baixar-doc" data-doc="reivindicacoes">⬇ Baixar .docx</button></div>
-        <p class="nota">A <b>1ª reivindicação</b> diz o essencial da invenção (o que não pode faltar). As <b>dependentes</b> acrescentam um detalhe cada: alimentação, forma de fixação, aplicação, diagrama de blocos com os números (01), (02)…</p>
+        const partes = partesDoTitulo(p);
+        const cartao = (r, i) => {
+            const c = `reivindicacoes.#${r.id}.`;
+            return `<div class="card reivindicacao ${r.dep ? 'dependente' : 'independente'}"><div class="card-topo"><h3>${i + 1}. <small>${r.dep ? 'dependente da ' + r.dep : 'independente'}</small></h3><div class="botoes">
+                <button type="button" class="btn btn-secondary btn-sm" data-acao="add-reiv-dep" data-n="${i + 1}" title="Nova reivindicação que detalha esta">＋ Dependente desta</button>
+                <button type="button" class="btn-icone" data-acao="subir-reiv" data-id="${r.id}" title="Subir" ${i ? '' : 'disabled'}>↑</button><button type="button" class="btn-icone" data-acao="remover" data-lista="reivindicacoes" data-id="${r.id}">✕</button></div></div>
+            <div class="reiv-campos">
+                <label class="reiv-pre">① Título ou parte do título
+                    <input type="text" list="dl-partes-titulo" data-c="${c}preambulo" value="${escAttr(r.preambulo)}" placeholder="${escAttr(tituloPedido(p))}">
+                    <small>vazio = título completo</small></label>
+                <label class="reiv-dep">② De acordo com
+                    <select data-c="${c}dep"><option value="">— (independente)</option>${rs.slice(0, i).map((x, j) => `<option value="${j + 1}" ${Number(r.dep) === j + 1 ? 'selected' : ''}>a reivindicação ${j + 1}</option>`).join('')}</select></label>
+                <label class="reiv-exp">③ Palavra-chave
+                    <select data-c="${c}expressao"><option value="">${esc(expressaoReiv(p, Object.assign({}, r, { expressao: '' })))} (automático)</option>${EXPRESSOES.map(x => `<option ${r.expressao === x ? 'selected' : ''}>${x}</option>`).join('')}</select></label>
+                <label class="reiv-txt">④ Característica (o que vem depois da palavra-chave)
+                    <textarea data-c="${c}texto" rows="3" placeholder="ex.: compreender um sensor de pressão (05) e um módulo de comunicação sem fio (06)">${esc(r.texto)}</textarea></label>
+            </div>
+            <p class="previa-reiv"><span class="pr-pre">${esc(preambuloReiv(p, r))}</span>${r.dep ? `<span class="pr-dep">${esc(trechoDependencia(r))}</span>` : ''} <span class="pr-exp">${esc(expressaoReiv(p, r))}</span> <span class="pr-txt">${esc(String(r.texto || '').trim().replace(/\.+$/, '') || '…')}</span>.</p></div>`;
+        };
+        return `${cabecalho('reivindicacoes', 'As reivindicações definem o que fica protegido. Cada uma é uma única frase montada em 4 partes: ① o título (ou parte dele), ② "de acordo com a reivindicação N" (só nas dependentes), ③ a palavra-chave "caracterizado por" e ④ a característica. O rascunho vem da ficha.')}
+        <datalist id="dl-partes-titulo">${partes.map(x => `<option value="${escAttr(x)}"></option>`).join('')}</datalist>
+        <div class="card"><div class="botoes">${!rs.length && p.ficha.componentes.length ? '<button type="button" class="btn btn-secondary" data-acao="rascunho-reivindicacoes">✨ Montar a partir dos componentes</button>' : ''}<button type="button" class="btn btn-primary" data-acao="add-reiv-ind">＋ Independente</button><button type="button" class="btn btn-secondary" data-acao="add-reiv-dep" ${rs.length ? '' : 'disabled'}>＋ Dependente</button><button type="button" class="btn btn-secondary" data-acao="pre-preencher">⚡ Pré-preencher o pedido</button><button type="button" class="btn btn-secondary" data-acao="baixar-doc" data-doc="reivindicacoes">⬇ Baixar .docx</button></div>
+        <p class="nota">A <b>independente</b> diz o essencial (o que não pode faltar). Cada <b>dependente</b> acrescenta um detalhe e repete o título (ou a mesma parte dele) seguido de "de acordo com a reivindicação N". A palavra-chave do INPI é <b>"caracterizado por"</b> (ou "caracterizada por", conforme o título).</p>
         <p class="nota">${p.natureza === 'MU' ? 'Modelo de utilidade: uma só reivindicação independente, descrevendo a forma ou disposição.' : 'Patente de invenção: pode ter mais de uma independente (ex.: produto e processo).'} Evite: etc., aproximadamente, preferencialmente, "conforme a figura".</p></div>
-        ${rs.map((r, i) => `<div class="card reivindicacao"><div class="card-topo"><h3>${i + 1}.</h3><div class="botoes"><label class="campo-inline">tipo <select data-c="reivindicacoes.#${r.id}.dep"><option value="">independente</option>${rs.slice(0, i).map((x, j) => `<option value="${j + 1}" ${Number(r.dep) === j + 1 ? 'selected' : ''}>dependente da ${j + 1}</option>`).join('')}</select></label><button type="button" class="btn-icone" data-acao="subir-reiv" data-id="${r.id}" title="Subir" ${i ? '' : 'disabled'}>↑</button><button type="button" class="btn-icone" data-acao="remover" data-lista="reivindicacoes" data-id="${r.id}">✕</button></div></div>
-            <p class="preambulo"><b>${esc(tituloPedido(p))}</b>${r.dep ? ' de acordo com a reivindicação ' + r.dep : ''} caracterizado por…</p>
-            <textarea data-c="reivindicacoes.#${r.id}.texto" rows="3" placeholder="o que vem depois de 'caracterizado por'">${esc(r.texto)}</textarea>
-            <p class="nota previa">${esc(textoReivindicacao(p, r))}</p></div>`).join('')}
+        ${rs.map(cartao).join('') || '<div class="vazio">Nenhuma reivindicação. Comece pela independente.</div>'}
         <div class="card">${alertas('reivindicacoes')}</div>`;
     }
 };

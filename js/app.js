@@ -129,6 +129,11 @@ document.addEventListener('input', e => {
         const conta = $(`[data-conta="${CSS.escape(el.dataset.c)}"]`);
         if (conta) conta.textContent = palavras(el.value) + ' palavras';
         if (el.dataset.c === 'titulo') $('#topbar-projeto-nome').textContent = el.value || 'Sem título';
+        const m = el.dataset.c.match(/^reivindicacoes\.#([^.]+)\./);
+        if (m) {
+            const r = App.p.reivindicacoes.find(x => x.id === m[1]), card = el.closest('.reivindicacao');
+            if (r && card) { $('.pr-pre', card).textContent = preambuloReiv(App.p, r); $('.pr-exp', card).textContent = expressaoReiv(App.p, r); $('.pr-txt', card).textContent = String(r.texto || '').trim().replace(/\.+$/, '') || '…'; }
+        }
         clearTimeout(App._tp); App._tp = setTimeout(() => atualizarPlacar(), 700);
     } else if (el.dataset.acaoTraducao !== undefined) {
         App.p.busca.traducoes[el.dataset.acaoTraducao] = el.value; salvar();
@@ -142,7 +147,7 @@ document.addEventListener('change', e => {
     // selects, datas, checkboxes e rádios que mudam a página (ex.: tipo da reivindicação, vínculo)
     if (el.dataset.c && (el.tagName === 'SELECT' || el.type === 'checkbox' || el.type === 'radio' || el.type === 'date')) {
         gravarCaminho(App.p, el.dataset.c, valorDe(el)); mudou();
-    } else if (el.dataset.c && el.tagName === 'TEXTAREA' && /reivindicacoes|desenhos|busca\.termos|ficha\.componentes|resultados/.test(el.dataset.c)) {
+    } else if (el.dataset.c && el.tagName === 'TEXTAREA' && /desenhos|busca\.termos|ficha\.componentes|resultados/.test(el.dataset.c)) {
         mudou();
     } else if (el.dataset.c && /busca\.termos|ficha\.componentes|classes\.manuais|busca\.depositantes|legenda/.test(el.dataset.c)) {
         mudou();
@@ -180,7 +185,11 @@ const ACOES = {
     'remover'(el) {
         const lista = lerCaminho(App.p, el.dataset.lista);
         const i = lista.findIndex(x => x.id === el.dataset.id);
-        if (i >= 0 && confirm('Remover este item?')) { lista.splice(i, 1); mudou(); }
+        if (i >= 0 && confirm('Remover este item?')) {
+            lista.splice(i, 1);
+            if (el.dataset.lista === 'reivindicacoes') for (const r of lista) { if (r.dep === i + 1) r.dep = r.dep > 1 ? r.dep - 1 : null; else if (r.dep > i + 1) r.dep--; }
+            mudou();
+        }
     },
     'add-fonte-arquivo': async () => {
         const arqs = await escolherArquivo('.docx,.txt,.md,.csv,.html,.pdf', true);
@@ -236,7 +245,7 @@ const ACOES = {
                 const r = lerPedidoExistente(texto), p = App.p;
                 if (r.titulo && !p.titulo) p.titulo = r.titulo.charAt(0) + r.titulo.slice(1).toLowerCase();
                 if (r.tipo === 'relatorio') { for (const k of Object.keys(p.relatorio)) if (r.relatorio[k] && !p.relatorio[k]) p.relatorio[k] = r.relatorio[k]; if (/modelo de utilidade/i.test(texto) && !p.natureza) p.natureza = 'MU'; if (/patente de inven/i.test(texto) && !p.natureza) p.natureza = 'PI'; }
-                if (r.tipo === 'reivindicacoes' && !p.reivindicacoes.length) p.reivindicacoes = r.reivindicacoes.map(x => ({ id: uid(), ...x }));
+                if (r.tipo === 'reivindicacoes' && !p.reivindicacoes.length) p.reivindicacoes = r.reivindicacoes.map(x => ({ id: uid(), preambulo: '', expressao: '', ...x }));
                 if (r.tipo === 'resumo' && !p.resumo) { p.resumo = r.resumo; if (r.figuraResumo) p.figuraResumo = r.figuraResumo; }
                 if (r.tipo === 'desenhos') while (p.desenhos.length < r.figuras) p.desenhos.push({ id: uid(), legenda: '', img: '' });
                 if (r.tipo === 'desenhos') { const z = await JSZip.loadAsync(a); const imgs = Object.keys(z.files).filter(n => /^word\/media\//.test(n)).sort(); for (let i = 0; i < imgs.length && i < p.desenhos.length; i++) if (!p.desenhos[i].img) p.desenhos[i].img = await Imagens.guardar(new Blob([await z.file(imgs[i]).async('uint8array')], { type: /png$/i.test(imgs[i]) ? 'image/png' : 'image/jpeg' })); }
@@ -294,8 +303,31 @@ const ACOES = {
         avisar(n ? `${n} seção(ões) com rascunho. Revise tudo!` : 'Nada vazio para preencher (ou a ficha está vazia).'); mudou();
     },
     'rascunho-reivindicacoes'() { App.p.reivindicacoes = rascunhoReivindicacoes(App.p); mudou(); },
-    'add-reivindicacao'() { App.p.reivindicacoes.push({ id: uid(), dep: App.p.reivindicacoes.length ? 1 : null, texto: '' }); mudou(); },
-    'subir-reiv'(el) { const rs = App.p.reivindicacoes, i = rs.findIndex(r => r.id === el.dataset.id); if (i > 0) { [rs[i - 1], rs[i]] = [rs[i], rs[i - 1]]; mudou(); } },
+    'add-reivindicacao'() { ACOES[App.p.reivindicacoes.length ? 'add-reiv-dep' : 'add-reiv-ind']({ dataset: {} }); },
+    'add-reiv-ind'() { App.p.reivindicacoes.push({ id: uid(), dep: null, preambulo: '', expressao: '', texto: '' }); mudou(); focarUltimaReiv(); },
+    'add-reiv-dep'(el) {
+        const rs = App.p.reivindicacoes;
+        if (!rs.length) return ACOES['add-reiv-ind']();
+        // depende da indicada; sem indicação, da independente mais recente
+        let n = Number(el.dataset.n) || 0;
+        if (!n) { for (let i = rs.length - 1; i >= 0; i--) if (!rs[i].dep) { n = i + 1; break; } n = n || 1; }
+        const mae = rs[n - 1];
+        const nova = { id: uid(), dep: n, preambulo: mae.preambulo || '', expressao: mae.expressao || '', texto: '' };
+        // entra logo depois da última dependente da mesma família, para manter a numeração em ordem
+        let pos = n; while (pos < rs.length && rs[pos].dep && rs[pos].dep >= n) pos++;
+        const deslocadas = rs.slice(pos);
+        rs.splice(pos, 0, nova);
+        for (const r of deslocadas) if (r.dep && r.dep > pos) r.dep++;
+        mudou(); focarReiv(nova.id);
+    },
+    'subir-reiv'(el) {
+        const rs = App.p.reivindicacoes, i = rs.findIndex(r => r.id === el.dataset.id);
+        if (i <= 0) return;
+        if (rs[i].dep === i) return avisar('Ela depende da reivindicação de cima: não dá para passar à frente dela.', 'erro');
+        [rs[i - 1], rs[i]] = [rs[i], rs[i - 1]];
+        for (const r of rs) { if (r.dep === i) r.dep = i + 1; else if (r.dep === i + 1) r.dep = i; }
+        mudou();
+    },
     'add-desenho'() { App.p.desenhos.push({ id: uid(), legenda: '', img: '' }); mudou(); },
     'imagem-desenho': async (el) => {
         const [a] = await escolherArquivo('image/*');
@@ -352,6 +384,8 @@ document.addEventListener('click', e => {
 });
 
 /** Há de onde pré-preencher? (ficha da invenção, resumo ou reivindicações) */
+function focarReiv(id) { setTimeout(() => { const t = $(`textarea[data-c="reivindicacoes.#${id}.texto"]`); if (t) { t.scrollIntoView({ block: 'center' }); t.focus(); } }, 60); }
+function focarUltimaReiv() { const rs = App.p.reivindicacoes; if (rs.length) focarReiv(rs[rs.length - 1].id); }
 function temBase(p) { const f = p.ficha; return !!(f.campo.trim() || f.solucao.trim() || f.problema.trim() || f.componentes.length || p.resumo.trim() || p.reivindicacoes.some(r => r.texto.trim())); }
 function temConteudo() { const p = App.p; return !!(p.titulo || p.ficha.solucao || p.reivindicacoes.length || p.resumo); }
 

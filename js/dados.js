@@ -104,7 +104,7 @@ function normalizarPedido(p) {
     fundir(p, base);
     p.versao = PE_VERSAO;
     p.ficha.componentes = (p.ficha.componentes || []).map(c => ({ id: c.id || uid(), num: String(c.num || ''), nome: c.nome || '', funcao: c.funcao || '' }));
-    p.reivindicacoes = (p.reivindicacoes || []).map(r => ({ id: r.id || uid(), dep: r.dep ? Number(r.dep) : null, texto: r.texto || '' }));
+    p.reivindicacoes = (p.reivindicacoes || []).map(r => ({ id: r.id || uid(), dep: r.dep ? Number(r.dep) : null, preambulo: r.preambulo || '', expressao: r.expressao || '', texto: r.texto || '' }));
     p.desenhos = (p.desenhos || []).map(d => Object.assign({ id: d.id || uid(), legenda: d.legenda || '', img: d.img || '' }, d._url ? { _url: d._url } : {}));
     p.fontes = (p.fontes || []).map(f => ({ id: f.id || uid(), nome: f.nome || 'Fonte', tipo: f.tipo || 'texto', texto: f.texto || '', data: f.data || hojeISO(), ativa: f.ativa !== false }));
     p.contexto.divulgacoes = (p.contexto.divulgacoes || []).map(d => ({ id: d.id || uid(), data: d.data || '', meio: d.meio || '' }));

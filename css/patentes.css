@@ -147,3 +147,15 @@ body.caderno-aberto .caderno { transform: none; }
 .topbar-caderno { white-space: nowrap; }
 input[type=date] { display: block; width: 100%; padding: 0.42rem 0.6rem; border: 1px solid var(--borda); border-radius: 6px; font: inherit; margin-top: .2rem; background: #fff; }
 .tabela input[type=date] { width: auto; margin: 0; }
+/* ---------- reivindicações em 4 campos ---------- */
+.reivindicacao.dependente { border-left: 4px solid #9cc7bb; margin-left: 1.2rem; }
+.reivindicacao.independente { border-left: 4px solid var(--verde); }
+.reivindicacao h3 small { font-weight: 400; color: var(--suave); font-size: .8rem; }
+.reiv-campos { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: .5rem .8rem; }
+.reiv-campos .reiv-txt { grid-column: 1 / -1; }
+.reiv-campos small { font-weight: 400; }
+.previa-reiv { margin: .5rem 0 0; padding: .5rem .7rem; background: #f7faf9; border: 1px dashed var(--borda); border-radius: 6px; font-size: .9rem; text-align: justify; }
+.pr-pre { font-weight: 700; color: var(--teal); }
+.pr-dep { color: #6b5300; }
+.pr-exp { font-weight: 700; color: var(--verde-escuro); text-decoration: underline; }
+@media (max-width: 700px) { .reiv-campos { grid-template-columns: 1fr; } .reivindicacao.dependente { margin-left: .4rem; } }
