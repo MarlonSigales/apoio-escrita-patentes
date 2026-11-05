@@ -106,11 +106,81 @@ function autoPreencher(p) {
         subs.forEach(s => { if (/^A01/.test(s)) a.add('Eng. Agrícola'); if (/^(G01|G05|G08|H01|H02|H04|G16)/.test(s)) a.add('Eng. Elétrica'); if (/^(B65|F15|F16|B29|B33)/.test(s)) a.add('Engenharia Mecânica'); if (/^G06/.test(s)) a.add('Ciência da Computação'); });
         if (a.size) { u.areasAbrangidas = [...a]; p.autoFeito.areas = 1; feito.push('áreas abrangidas'); }
     }
-    if (!u.inventores.length && p.contexto.inventores && !p.autoFeito.inventores) {
-        u.inventores = p.contexto.inventores.split('\n').map(s => s.trim()).filter(Boolean).map((nome, i) => Object.assign(inventorVazio(), { nome, notificante: i === 0 }));
-        if (u.inventores.length) { p.autoFeito.inventores = 1; feito.push('inventores'); }
-    }
+    if (sincronizarInventores(p, 'ficha')) feito.push('inventores');
     return feito;
+}
+
+// ------------------------------------------------------------ inventores: ficha "Sua invenção" <-> aba Inventores
+const chaveNome = s => semAcento(String(s || '')).replace(/[^a-z ]/g, ' ').replace(/\s+/g, ' ').trim();
+function nomesDaFicha(p) { return String(p.contexto.inventores || '').split(/\n|;/).map(s => s.replace(/^[-•*\d.)\s]+/, '').trim()).filter(Boolean); }
+function temDadosPessoais(i) { return !!(i.cpf || i.email || i.celular || i.endereco || i.cep || i.percentual); }
+
+/**
+ * Mantém a lista de nomes da ficha e a aba Inventores iguais.
+ *  origem 'ficha': nomes novos da ficha viram inventores; quem saiu da ficha e foi criado por ela (sem dados pessoais) sai da aba.
+ *  origem 'tabela': a ficha passa a listar os nomes da aba (na ordem dela).
+ * Devolve true se mudou algo.
+ */
+function sincronizarInventores(p, origem = 'ficha') {
+    const u = p.universidade;
+    const antes = JSON.stringify([p.contexto.inventores, u.inventores.map(i => i.nome)]);
+    if (origem === 'tabela') {
+        p.contexto.inventores = u.inventores.map(i => i.nome.trim()).filter(Boolean).join('\n');
+    } else {
+        const nomes = nomesDaFicha(p), chaves = nomes.map(chaveNome);
+        // sai: criado pela ficha, sem dados, e não está mais na lista
+        u.inventores = u.inventores.filter(i => !(i.daFicha && !temDadosPessoais(i) && !chaves.includes(chaveNome(i.nome))));
+        // entra: nome da ficha que ainda não está na aba (aproveita um inventor sem nome, se houver)
+        nomes.forEach(n => {
+            if (u.inventores.some(i => chaveNome(i.nome) === chaveNome(n))) return;
+            const vazio = u.inventores.find(i => !i.nome.trim());
+            if (vazio) Object.assign(vazio, { nome: n, daFicha: true });
+            else u.inventores.push(Object.assign(inventorVazio(), { nome: n, daFicha: true }));
+        });
+        // ordem: a da ficha primeiro, depois quem só existe na aba
+        u.inventores.sort((a, b) => { const ia = chaves.indexOf(chaveNome(a.nome)), ib = chaves.indexOf(chaveNome(b.nome)); return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib); });
+        // quem só existe na aba também aparece na ficha
+        const extra = u.inventores.filter(i => i.nome.trim() && !chaves.includes(chaveNome(i.nome))).map(i => i.nome.trim());
+        if (extra.length) p.contexto.inventores = [...nomes, ...extra].join('\n');
+    }
+    if (u.inventores.length && !u.inventores.some(i => i.notificante)) u.inventores[0].notificante = true;
+    return antes !== JSON.stringify([p.contexto.inventores, u.inventores.map(i => i.nome)]);
+}
+
+// ------------------------------------------------------------ inventores em JSON (para reaproveitar em outros pedidos)
+const FORMATO_INVENTORES = 'apoio-escrita-patentes-inventores';
+const CAMPOS_PESSOA = ['nome', 'cpf', 'celular', 'email', 'endereco', 'cep', 'cidade', 'uf', 'nacionalidade', 'qualificacao', 'vinculo', 'instituicao', 'inventor', 'notificante', 'percentual'];
+function soPessoa(i) { const o = {}; for (const k of CAMPOS_PESSOA) o[k] = i[k] ?? ''; return o; }
+
+function exportarInventoresJSON(p) {
+    const u = p.universidade;
+    return JSON.stringify({ formato: FORMATO_INVENTORES, versao: 1, exportadoEm: new Date().toISOString(), pedido: p.titulo || '', instituicao: u.sigla || u.nome || '',
+        aviso: 'Contém dados pessoais (CPF, endereço, telefone): não publique.',
+        inventores: u.inventores.filter(i => i.nome.trim()).map(soPessoa), colaboradores: u.colaboradores.filter(i => i.nome.trim()).map(soPessoa) }, null, 1);
+}
+
+/** Junta os inventores do arquivo aos do pedido: quem já existe (mesmo CPF ou nome) só tem os campos vazios completados. */
+function importarInventoresJSON(p, texto) {
+    const o = JSON.parse(texto);
+    let lista, colabs = [];
+    if (o && o.formato === FORMATO_INVENTORES) { lista = o.inventores || []; colabs = o.colaboradores || []; }
+    else if (o && o.formato === 'apoio-escrita-patentes-pedido' && o.pedido && o.pedido.universidade) { lista = o.pedido.universidade.inventores || []; colabs = o.pedido.universidade.colaboradores || []; }
+    else if (Array.isArray(o)) lista = o;
+    else throw new Error('o arquivo não é uma lista de inventores deste app.');
+    const u = p.universidade, r = { novos: 0, atualizados: 0, colab: 0 };
+    const soCpf = s => String(s || '').replace(/\D/g, '');
+    const juntar = (alvo, x, ehColab) => {
+        const ja = alvo.find(i => (soCpf(i.cpf) && soCpf(i.cpf) === soCpf(x.cpf)) || (chaveNome(i.nome) && chaveNome(i.nome) === chaveNome(x.nome)));
+        if (ja) { let mudou = false; for (const k of CAMPOS_PESSOA) if (k !== 'notificante' && (ja[k] === '' || ja[k] == null) && x[k] !== '' && x[k] != null) { ja[k] = x[k]; mudou = true; } if (mudou && !ehColab) r.atualizados++; return; }
+        const novo = Object.assign(inventorVazio(), soPessoa(Object.assign(inventorVazio(), x)), { id: uid(), notificante: !ehColab && !!x.notificante && !alvo.some(i => i.notificante) });
+        if (ehColab) novo.inventor = false;
+        alvo.push(novo); ehColab ? r.colab++ : r.novos++;
+    };
+    lista.filter(x => x && x.nome).forEach(x => juntar(u.inventores, x, false));
+    colabs.filter(x => x && x.nome).forEach(x => juntar(u.colaboradores, x, true));
+    sincronizarInventores(p, 'tabela');
+    if (u.inventores.length && !u.inventores.some(i => i.notificante)) u.inventores[0].notificante = true;
+    return r;
 }
 
 /** Números de componentes citados na mesma frase que "FIGURA n" (ou, na falta, os do resumo). */

@@ -13,15 +13,14 @@ const algum = t => String(t || '').trim().length > 0;
 /** Etapas na ordem do guia. grupo = título no menu. */
 const ETAPAS = [
     { id: 'inicio', grupo: 'Comece aqui', titulo: 'Painel do inventor', icone: '🏠' },
-    { id: 'ficha', grupo: '1. Sua invenção', titulo: 'Sua invenção', icone: '💡' },
-    { id: 'entenda', grupo: '1. Sua invenção', titulo: 'Entenda: PI ou MU?', icone: '📘', guia: 'Entenda' },
+    { id: 'ficha', grupo: '1. Sua invenção', titulo: 'Sua invenção (e PI ou MU)', icone: '💡', guia: 'Entenda' },
     { id: 'fontes', grupo: '1. Sua invenção', titulo: 'Caderno de fontes', icone: '📚' },
     { id: 'resumo', grupo: '2. O núcleo do pedido', titulo: 'Resumo', icone: '✂️' },
     { id: 'reivindicacoes', grupo: '2. O núcleo do pedido', titulo: 'Reivindicações', icone: '⚖️' },
     { id: 'classificacao', grupo: '3. Faça buscas', titulo: 'Classificação', icone: '🧭', guia: 'Faça buscas' },
     { id: 'buscas', grupo: '3. Faça buscas', titulo: 'Buscas de anterioridade', icone: '🔎', guia: 'Faça buscas' },
-    { id: 'relatorio', grupo: '4. Escreva o restante', titulo: 'Relatório descritivo', icone: '📝', guia: 'Inicie o pedido' },
-    { id: 'desenhos', grupo: '4. Escreva o restante', titulo: 'Desenhos', icone: '🖼️' },
+    { id: 'desenhos', grupo: '4. Escreva o restante', titulo: 'Desenhos', icone: '🖼️', guia: 'Inicie o pedido' },
+    { id: 'relatorio', grupo: '4. Escreva o restante', titulo: 'Relatório descritivo', icone: '📝' },
     { id: 'inventores', grupo: '5. Via universidade', titulo: 'Inventores e participação', icone: '👥' },
     { id: 'universidade', grupo: '5. Via universidade', titulo: 'Formulários da universidade', icone: '🏛️' },
     { id: 'revisao', grupo: '6. Deposite e acompanhe', titulo: 'Revisão final', icone: '✅' },
@@ -39,11 +38,9 @@ function missoes(p) {
     const soma = u.inventores.concat(u.colaboradores).reduce((s, x) => s + (Number(String(x.percentual).replace(',', '.')) || 0), 0);
     return {
         inicio: [{ t: 'Dar nome ao projeto (título provisório)', xp: 10, ok: algum(p.titulo) }],
-        entenda: [
-            { t: 'Escolher a natureza: PI ou MU', xp: 20, ok: !!p.natureza },
-            { t: 'Registrar divulgações (TCC, congresso, artigo) ou confirmar que não houve', xp: 15, ok: p.contexto.divulgacoes.length > 0 || p.revisao.semDivulgacao }
-        ],
         ficha: [
+            { t: 'Escolher a natureza: PI ou MU', xp: 20, ok: !!p.natureza },
+            { t: 'Registrar divulgações (TCC, congresso, artigo) ou confirmar que não houve', xp: 15, ok: p.contexto.divulgacoes.length > 0 || p.revisao.semDivulgacao },
             { t: 'Descrever o campo (para que serve)', xp: 15, ok: cheio(f.campo) },
             { t: 'Explicar o problema técnico', xp: 15, ok: cheio(f.problema) },
             { t: 'Explicar a solução e como funciona', xp: 20, ok: cheio(f.solucao) },
@@ -76,8 +73,10 @@ function missoes(p) {
             { t: '3 reivindicações dependentes', xp: 20, ok: rs.filter(x => x.dep).length >= 3 }
         ],
         desenhos: [
-            { t: 'Inserir a FIGURA 1 com legenda', xp: 20, ok: p.desenhos.some(d => d.img && d.legenda) },
-            { t: 'Todas as figuras com imagem e legenda', xp: 10, ok: p.desenhos.length > 0 && p.desenhos.every(d => d.img && d.legenda) }
+            { t: 'Inserir a FIGURA 1 com legenda', xp: 20, ok: p.desenhos.some(d => (d.img || (d.elementos || []).length) && d.legenda) },
+            { t: 'Numerar as peças com setas', xp: 15, ok: p.desenhos.some(d => (d.elementos || []).some(e => e.t === 'seta')) },
+            { t: 'Descrever todos os números das setas', xp: 15, ok: p.desenhos.some(d => (d.elementos || []).some(e => e.t === 'seta')) && p.desenhos.every(d => numerosDaFigura(d).every(n => (p.ficha.componentes.find(c => n2(c.num) === n) || {}).nome)) },
+            { t: 'Todas as figuras com imagem ou desenho e legenda', xp: 10, ok: p.desenhos.length > 0 && p.desenhos.every(d => (d.img || (d.elementos || []).length) && d.legenda) }
         ],
         resumo: [
             { t: 'Resumo entre 50 e 200 palavras', xp: 30, ok: palavras(p.resumo) >= 50 && palavras(p.resumo) <= 200 }

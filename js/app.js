@@ -94,12 +94,14 @@ function renderPagina(manter = false) {
     const pg = PAGINAS[App.pagina] || PAGINAS.inicio;
     App.placar = App.placar || placar(App.p);
     $('#app').innerHTML = `<div class="container">${pg.render(App.p)}</div>`;
+    if (pg.depois) pg.depois(App.p);
     const i = ETAPAS.findIndex(e => e.id === App.pagina);
     const ant = ETAPAS[i - 1], prox = ETAPAS[i + 1];
     $('#etapa-nav').innerHTML = (ant ? `<a class="btn btn-secondary" href="#/${ant.id}"><small>◀ anterior</small>${esc(ant.titulo)}</a>` : '') + (prox ? `<a class="btn btn-primary etapa-nav-proxima" href="#/${prox.id}"><small>próxima ▶</small>${esc(prox.titulo)}</a>` : '');
     hidratarImagens();
     montarMenu();
     if (manter) window.scrollTo(0, y); else window.scrollTo(0, 0);
+    if (App.rolarPara) { const c = document.getElementById(App.rolarPara); App.rolarPara = null; if (c) c.scrollIntoView({ block: 'start' }); }
 }
 
 async function hidratarImagens() {
@@ -107,8 +109,11 @@ async function hidratarImagens() {
 }
 
 function rota() {
-    const id = (location.hash.match(/^#\/([\w-]+)/) || [])[1] || 'inicio';
+    let id = (location.hash.match(/^#\/([\w-]+)/) || [])[1] || 'inicio';
+    const ancora = { entenda: 'pi-ou-mu', divulgacao: 'divulgacoes' }[id];
+    if (ancora) { id = 'ficha'; App.rolarPara = ancora; }
     App.pagina = PAGINAS[id] ? id : 'inicio';
+    if (['inventores', 'universidade', 'entrega', 'revisao'].includes(App.pagina)) sincronizarInventores(App.p, 'ficha');
     if (App.pagina !== 'inicio' && App.pagina !== 'ficha' && temBase(App.p)) {
         const feito = autoPreencher(App.p);
         if (feito.length) { salvar(); atualizarPlacar(); avisar('⚡ Pré-preenchido com o que você já escreveu: ' + feito.slice(0, 6).join(', ') + (feito.length > 6 ? '…' : ''), 'ok', 6000); }
@@ -149,7 +154,11 @@ document.addEventListener('change', e => {
         gravarCaminho(App.p, el.dataset.c, valorDe(el)); mudou();
     } else if (el.dataset.c && el.tagName === 'TEXTAREA' && /desenhos|busca\.termos|ficha\.componentes|resultados/.test(el.dataset.c)) {
         mudou();
-    } else if (el.dataset.c && /busca\.termos|ficha\.componentes|classes\.manuais|busca\.depositantes|legenda/.test(el.dataset.c)) {
+    } else if (el.dataset.c && el.closest('.fig-celula')) {
+        salvar(); atualizarPlacar();          // no editor de figuras não redesenha a página (não perde o clique na figura)
+    } else if (el.dataset.c && /^universidade\.inventores\.#[^.]+\.nome$/.test(el.dataset.c)) {
+        sincronizarInventores(App.p, 'tabela'); salvar(); atualizarPlacar();
+    } else if (el.dataset.c && /busca\.termos|ficha\.componentes|classes\.manuais|busca\.depositantes/.test(el.dataset.c)) {
         mudou();
     } else if (el.dataset.acao === 'marcar-classe') {
         const m = App.p.classes.marcadas, c = el.dataset.cod;
@@ -172,6 +181,7 @@ document.addEventListener('focusin', e => { if (e.target.matches('textarea[data-
 
 // ------------------------------------------------------------ ações
 const ACOES = {
+    'ir-pi-mu'() { const c = document.getElementById('pi-ou-mu'); if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' }); },
     'natureza'(el) { App.p.natureza = el.dataset.v; mudou(); },
     'add-divulgacao'() { App.p.contexto.divulgacoes.push({ id: uid(), data: '', meio: '' }); mudou(); },
     'add-componente'() { const n = App.p.ficha.componentes.length + 1; App.p.ficha.componentes.push({ id: uid(), num: String(n).padStart(2, '0'), nome: '', funcao: '' }); mudou(); },
@@ -188,6 +198,7 @@ const ACOES = {
         if (i >= 0 && confirm('Remover este item?')) {
             lista.splice(i, 1);
             if (el.dataset.lista === 'reivindicacoes') for (const r of lista) { if (r.dep === i + 1) r.dep = r.dep > 1 ? r.dep - 1 : null; else if (r.dep > i + 1) r.dep--; }
+            if (el.dataset.lista === 'universidade.inventores') sincronizarInventores(App.p, 'tabela');
             mudou();
         }
     },
@@ -248,7 +259,7 @@ const ACOES = {
                 if (r.tipo === 'reivindicacoes' && !p.reivindicacoes.length) p.reivindicacoes = r.reivindicacoes.map(x => ({ id: uid(), preambulo: '', expressao: '', ...x }));
                 if (r.tipo === 'resumo' && !p.resumo) { p.resumo = r.resumo; if (r.figuraResumo) p.figuraResumo = r.figuraResumo; }
                 if (r.tipo === 'desenhos') while (p.desenhos.length < r.figuras) p.desenhos.push({ id: uid(), legenda: '', img: '' });
-                if (r.tipo === 'desenhos') { const z = await JSZip.loadAsync(a); const imgs = Object.keys(z.files).filter(n => /^word\/media\//.test(n)).sort(); for (let i = 0; i < imgs.length && i < p.desenhos.length; i++) if (!p.desenhos[i].img) p.desenhos[i].img = await Imagens.guardar(new Blob([await z.file(imgs[i]).async('uint8array')], { type: /png$/i.test(imgs[i]) ? 'image/png' : 'image/jpeg' })); }
+                if (r.tipo === 'desenhos') { const z = await JSZip.loadAsync(a); const imgs = Object.keys(z.files).filter(n => /^word\/media\//.test(n)).sort(); for (let i = 0; i < imgs.length && i < p.desenhos.length; i++) if (!p.desenhos[i].img) { const bl = new Blob([await z.file(imgs[i]).async('uint8array')], { type: /png$/i.test(imgs[i]) ? 'image/png' : 'image/jpeg' }); p.desenhos[i].img = await Imagens.guardar(bl); await ajustarTamanhoPelaImagem(p.desenhos[i], bl); } }
                 p.fontes.push({ id: uid(), nome: a.name, tipo: 'docx', texto, data: hojeISO(), ativa: true });
                 feito.push(r.tipo);
             } catch (e) { avisar(a.name + ': ' + e.message, 'erro', 6000); }
@@ -339,14 +350,58 @@ const ACOES = {
         for (const r of rs) { if (r.dep === i) r.dep = i + 1; else if (r.dep === i + 1) r.dep = i; }
         mudou();
     },
-    'add-desenho'() { App.p.desenhos.push({ id: uid(), legenda: '', img: '' }); mudou(); },
+    'add-desenho'(el) {
+        const pos = el && el.dataset && el.dataset.pos !== undefined ? Number(el.dataset.pos) : App.p.desenhos.length;
+        const d = normalizarFigura({ id: uid(), legenda: '', img: '', elementos: [] });
+        App.p.desenhos.splice(pos, 0, d);
+        if (pos < App.p.desenhos.length - 1 && Number(App.p.figuraResumo) > pos) App.p.figuraResumo = String(Number(App.p.figuraResumo) + 1);
+        mudou();
+        setTimeout(() => { const c = $(`.fig-celula[data-fig="${d.id}"]`); if (c) c.scrollIntoView({ block: 'start', behavior: 'smooth' }); }, 50);
+    },
     'imagem-desenho': async (el) => {
-        const [a] = await escolherArquivo('image/*');
+        const [a] = await escolherArquivo('image/*,.svg');
         if (!a) return;
         const d = App.p.desenhos.find(x => x.id === el.dataset.id);
-        d.img = await Imagens.guardar(a); mudou();
+        d.img = await Imagens.guardar(a);
+        if (!(d.elementos || []).length) await ajustarTamanhoPelaImagem(d, a);
+        mudou();
+    },
+    'fig-tool'(el) { Ed.tool[el.dataset.fig] = el.dataset.tool; if (el.dataset.tool !== 'sel') Ed.sel[el.dataset.fig] = null; marcarFerramenta(el.dataset.fig); redesenhar(el.dataset.fig); },
+    'fig-apagar'(el) { apagarSelecionado(el.dataset.fig); },
+    'fig-desfazer'(el) { desfazerFigura(el.dataset.fig); },
+    'fig-tirar-fundo'(el) { const d = figura(el.dataset.fig); if (d && confirm('Tirar a imagem de fundo desta figura? (os desenhos ficam)')) { d.img = ''; mudou(); } },
+    'fig-mover'(el) {
+        const ds = App.p.desenhos, i = ds.findIndex(x => x.id === el.dataset.fig), j = i + Number(el.dataset.dir);
+        if (i < 0 || j < 0 || j >= ds.length) return;
+        [ds[i], ds[j]] = [ds[j], ds[i]];
+        const fr = Number(App.p.figuraResumo); if (fr === i + 1) App.p.figuraResumo = String(j + 1); else if (fr === j + 1) App.p.figuraResumo = String(i + 1);
+        mudou();
+    },
+    'fig-traduzir'(el) { const d = figura(el.dataset.fig); const n = traduzirTextosFigura(App.p, d); avisar(n ? `${n} tradução(ões) preenchida(s). Confira.` : 'Nada para traduzir pelo dicionário: escreva à mão.', n ? 'ok' : 'erro'); mudou(); },
+    'fig-relatorio'() {
+        const t = RASCUNHOS.desenhos(App.p);
+        if (!t) return avisar('Crie ao menos uma figura.', 'erro');
+        if (App.p.relatorio.desenhos.trim() && App.p.relatorio.desenhos.trim() !== t && !confirm('Reescrever a "Breve descrição dos desenhos" do relatório com as legendas e as setas atuais?')) return;
+        App.p.relatorio.desenhos = t; App.p.autoFeito['relatorio.desenhos'] = 1;
+        avisar('Breve descrição dos desenhos atualizada no relatório.'); mudou();
     },
     'add-inventor'() { const i = inventorVazio(); if (!App.p.universidade.inventores.length) i.notificante = true; App.p.universidade.inventores.push(i); mudou(); },
+    'exportar-inventores'() {
+        const u = App.p.universidade;
+        if (!u.inventores.some(i => i.nome) && !u.colaboradores.some(i => i.nome)) return avisar('Cadastre os inventores antes de exportar.', 'erro');
+        const nome = 'Inventores - ' + nomePeloTitulo(App.p, 'json');
+        baixarArquivo(new Blob([exportarInventoresJSON(App.p)], { type: 'application/json' }), nome);
+        avisar(`Exportado: "${nome}". Em outro pedido, use "Importar inventores". Atenção: tem CPF e endereço.`, 'ok', 7000);
+    },
+    'importar-inventores': async () => {
+        const [a] = await escolherArquivo('.json');
+        if (!a) return;
+        try {
+            const r = importarInventoresJSON(App.p, await a.text());
+            avisar(`Inventores importados: ${r.novos} novo(s), ${r.atualizados} completado(s)${r.colab ? `, ${r.colab} colaborador(es)` : ''}. Confira a participação (%).`, 'ok', 7000);
+            mudou();
+        } catch (e) { avisar('Não consegui importar: ' + e.message, 'erro', 7000); }
+    },
     'add-colaborador'() { App.p.universidade.colaboradores.push(Object.assign(inventorVazio(), { inventor: false })); mudou(); },
     'dividir-igual'() { const t = App.p.universidade.inventores.concat(App.p.universidade.colaboradores); if (!t.length) return; const v = Math.floor(10000 / t.length) / 100; t.forEach((x, i) => { x.percentual = String(i === 0 ? Math.round((100 - v * (t.length - 1)) * 100) / 100 : v); }); mudou(); },
     'baixar-doc': async (el) => {
@@ -391,6 +446,24 @@ const ACOES = {
         Object.assign(App.p.busca, { retorno: '', registroColado: [], notaRetorno: '', analise: { diferenciais: [], ameacas: [], lacunas: [], recomendacoes: [], prazos: '', data: '' } }); mudou();
     },
     'add-registro'() { App.p.busca.registroColado.push({ id: uid(), base: 'inpi', consulta: '', n: '', triados: '' }); mudou(); },
+    'copiar-converter-pdf'() { copiarTexto(promptConverterBusca(App.p)); avisar('Pedido copiado. Cole numa IA, anexe o PDF da busca e traga o JSON de volta para este campo.', 'ok', 6000); },
+    'copiar-prompt-relatorio'() { copiarTexto(promptMelhorarRelatorio(App.p)); },
+    'baixar-prompt-relatorio'() { baixarArquivo(new Blob([promptMelhorarRelatorio(App.p)], { type: 'text/markdown' }), 'Prompt relatorio - ' + nomePeloTitulo(App.p, 'md')); },
+    'aplicar-relatorio-ia'() {
+        const t = ($('#resposta-relatorio') || {}).value || '';
+        if (!t.trim()) return avisar('Cole a resposta da IA no campo antes.', 'erro');
+        if (Object.values(App.p.relatorio).some(x => x.trim()) && !confirm('Substituir as seções do relatório pela versão da IA? (a atual fica guardada para voltar)')) return;
+        try {
+            const m = aplicarMelhoriaRelatorio(App.p, t);
+            avisar(`Relatório atualizado: ${m.secoes.length} seção(ões).${m.semSuporte.length ? ' Veja as características sem suporte.' : ''}${m.pendencias.length ? ' Há pendências.' : ''}`, 'ok', 7000);
+            mudou();
+        } catch (e) { avisar('Não consegui ler: ' + e.message, 'erro', 8000); }
+    },
+    'desfazer-relatorio-ia'() {
+        if (!App.p.relatorioAnterior || !confirm('Voltar o relatório para a versão antes da IA?')) return;
+        const atual = App.p.relatorio; App.p.relatorio = App.p.relatorioAnterior; App.p.relatorioAnterior = atual;
+        avisar('Versão anterior restaurada (dá para alternar de novo).'); mudou();
+    },
     'tour'() { iniciarTour(true); },
     'fechar-menu'() { document.body.classList.remove('sidebar-aberta'); }
 };

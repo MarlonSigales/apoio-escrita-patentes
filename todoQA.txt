@@ -28,6 +28,9 @@ Atualizado em 04/11/2026 (versão 2).
   o app importa o JSON (colado ou arquivo) direto no formulário e no relatório da busca; texto antigo continua aceito.
 9 [resolvido 04/11/2026] Exportar o pedido em JSON com o nome do título (figuras embutidas) e reimportar para continuar;
   o ZIP leva o mesmo JSON.
+10 [resolvido 04/11/2026] Editor de desenhos (células, setas numeradas, textos traduzíveis) antes do relatório; inventores
+   sincronizados com a ficha e JSON de inventores; pedido de melhoria do relatório com IA; pedido para converter PDF de
+   busca em JSON; "Entenda: PI ou MU" incorporado à aba "Sua invenção" (escolha num só lugar).
 2 [futuro] Ampliar o catálogo IPC/CPC (hoje ~80 classes, foco em agro, eletrônica e controle).
 3 [futuro] Ler PDF direto como fonte (hoje: copiar e colar o texto).
 4 [futuro] Nuvem da equipe (MEGA), como no Projeto Conceitual, com senha e dados resguardados.

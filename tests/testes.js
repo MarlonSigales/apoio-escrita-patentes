@@ -64,6 +64,41 @@ function ok(cond, nome) { RES.push([!!cond, nome]); }
     let recusou = false; try { await importarPedidoJSON(RETORNO_EXEMPLO); } catch (e) { recusou = /busca/.test(e.message); }
     ok(recusou, 'avisa quando abrem o JSON da busca no lugar do pedido');
     ok((await importarPedidoJSON(JSON.stringify(p))).titulo === p.titulo, 'abre também o pedido.json antigo (sem envelope)');
+    // inventores: ficha <-> aba
+    const iv = normalizarPedido(pedidoVazio()); iv.contexto.inventores = 'Ana Souza\nBruno Lima';
+    sincronizarInventores(iv, 'ficha');
+    ok(iv.universidade.inventores.map(i => i.nome).join('|') === 'Ana Souza|Bruno Lima' && iv.universidade.inventores[0].notificante, 'nomes da ficha viram inventores');
+    iv.universidade.inventores[1].cpf = '111'; iv.contexto.inventores = 'Ana Souza\nCarla Dias';
+    sincronizarInventores(iv, 'ficha');
+    ok(iv.universidade.inventores.map(i => i.nome).join('|') === 'Ana Souza|Carla Dias|Bruno Lima' && /Bruno Lima/.test(iv.contexto.inventores), 'atualizações da ficha entram e quem tem dados não some');
+    iv.universidade.inventores[0].nome = 'Ana Souza Pereira'; sincronizarInventores(iv, 'tabela');
+    ok(iv.contexto.inventores.split('\n')[0] === 'Ana Souza Pereira', 'nome alterado na aba volta para a ficha');
+    const ej = exportarInventoresJSON(iv), outro = normalizarPedido(pedidoVazio());
+    outro.universidade.inventores = [Object.assign(inventorVazio(), { nome: 'Carla Dias', email: 'c@x.br' })];
+    const ri = importarInventoresJSON(outro, ej);
+    ok(JSON.parse(ej).formato === 'apoio-escrita-patentes-inventores' && ri.novos === 2 && ri.atualizados === 0 && outro.universidade.inventores.length === 3 && outro.universidade.inventores.find(i => i.nome === 'Bruno Lima').cpf === '111' && /Bruno Lima/.test(outro.contexto.inventores), 'exporta e importa inventores em outro pedido sem duplicar');
+    // figuras
+    const fg = normalizarPedido(pedidoVazio()); fg.titulo = 'X'; fg.ficha.componentes = [{ id: 'c1', num: '01', nome: 'Bateria', funcao: '' }];
+    fg.desenhos = [normalizarFigura({ id: 'f1', legenda: 'ilustra o sistema', img: '', elementos: [{ id: 'a', t: 'seta', num: '01', x1: 10, y1: 10, x2: 50, y2: 50 }, { id: 'b', t: 'seta', num: '01', x1: 90, y1: 10, x2: 60, y2: 50 }, { id: 'c', t: 'seta', num: '02', x1: 30, y1: 80, x2: 60, y2: 90 }] })];
+    ok(numerosDaFigura(fg.desenhos[0]).join() === '01,02' && proximoNumero(fg, fg.desenhos[0]) === '03', 'setas: números repetidos contam uma vez e o próximo é progressivo');
+    ok(RASCUNHOS.desenhos(fg) === 'A FIGURA 1 ilustra o sistema, na qual se observam bateria (01) e [DESCREVER] (02).', 'as setas escrevem a breve descrição dos desenhos');
+    ok(verificar(fg).some(x => x.onde === 'desenhos' && /\(02\) está sem descrição/.test(x.msg)), 'avisa seta sem descrição');
+    const tx = normalizarPedido(pedidoVazio()); tx.desenhos = [normalizarFigura({ id: 'f', elementos: [{ id: 't', t: 'texto', pt: 'sensor de pressão', en: '', es: '' }] })];
+    traduzirTextosFigura(tx, tx.desenhos[0]);
+    ok(tx.desenhos[0].elementos[0].en === 'pressure sensor' && tx.desenhos[0].elementos[0].es === 'sensor de presión', 'textos da figura traduzidos pelo dicionário');
+    tx.idiomaDesenhos = 'en'; ok(textoNoIdioma(tx, tx.desenhos[0].elementos[0]) === 'pressure sensor', 'troca o idioma dos textos da figura');
+    const png = await figuraPNG(fg, fg.desenhos[0]);
+    ok(png && png.type === 'image/png' && png.size > 500, 'figura desenhada vira PNG para o .docx');
+    // melhorar o relatório com IA
+    const pr = promptMelhorarRelatorio(p);
+    ok(/art\. 24/.test(pr) && /mais geral possível/.test(pr) && /apoio-escrita-patentes-relatorio/.test(pr) && pr.includes(textoReivindicacao(p, p.reivindicacoes[0])), 'prompt do relatório leva regras, reivindicações e formato JSON');
+    const pm = exemploPressao();
+    const resp = 'Segue:\n```json\n' + JSON.stringify({ formato: 'apoio-escrita-patentes-relatorio', versao: 1, relatorio: { campo: 'A presente invenção refere-se a um sistema de monitoramento.', descricao: '1. Primeiro parágrafo.\n\n2. Segundo parágrafo.' }, pendencias: ['faixa de pressão'], reivindicacoes_sem_suporte: [], termos_genericos: [{ antes: 'ESP32', depois: 'unidade de processamento' }], observacoes: [] }) + '\n```';
+    const am = aplicarMelhoriaRelatorio(pm, resp);
+    ok(pm.relatorio.campo.startsWith('A presente invenção') && pm.relatorio.descricao === 'Primeiro parágrafo.\n\nSegundo parágrafo.' && pm.relatorio.exemplos === exemploPressao().relatorio.exemplos && am.termos[0] === 'ESP32 → unidade de processamento' && pm.relatorioAnterior.campo, 'resposta da IA atualiza as seções e guarda a anterior');
+    let rec2 = false; try { aplicarMelhoriaRelatorio(pm, 'texto sem json'); } catch (e) { rec2 = true; } ok(rec2, 'resposta sem o JSON é recusada');
+    const cv = promptConverterBusca(p);
+    ok(/Não refaça a busca/.test(cv) && /"formato": "apoio-escrita-patentes-busca"/.test(cv) && /\*\*C1:\*\*/.test(cv), 'pedido para converter PDF de busca em JSON');
     for (const d of DOCUMENTOS) {
         const b = await gerarDocumento(p, d.id);
         const z = await JSZip.loadAsync(b);

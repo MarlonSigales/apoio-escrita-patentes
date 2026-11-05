@@ -11,7 +11,7 @@ local, com `python3 -m http.server`.
 
 1. **Jogo de missões.** Cada etapa tem missões que dão XP. O XP sobe o nível, de Curioso(a) até Inventor(a) completo(a), e os marcos dão medalhas.
    O XP é calculado do próprio pedido: se você apagar um texto, perde os pontos.
-2. **Começa pela ficha "Sua invenção".** É a primeira aba depois do Início. Dela saem os rascunhos do **resumo** e das **reivindicações**.
+2. **Começa pela ficha "Sua invenção".** É a primeira aba depois do Início e reúne tudo do "Entenda" do guia do INPI: a escolha **PI ou MU** (feita num só lugar, valendo para o pedido todo), o teste para quem está em dúvida, as **divulgações** com o prazo de 12 meses e o que o INPI exige. Dela saem os rascunhos do **resumo** e das **reivindicações**.
    Quem já tem o resumo e as reivindicações escritos pode colá-los: o app completa a ficha a partir deles. Juntos, eles pré-preenchem, em cadeia:
    - a ficha (campo, solução, componentes numerados, vantagens, aplicações);
    - os termos e as classes da busca;
@@ -31,6 +31,7 @@ local, com `python3 -m http.server`.
    3. **Retorno colado ou aberto como arquivo `.json`.** Retornos antigos em texto (PDF copiado, tabelas) continuam aceitos. O app lê tabelas em Markdown, texto de PDF e linhas como "Sensor de pressão / 1843" debaixo do nome da base.
       Daí saem as contagens por base, os documentos com relevância e link, a conclusão e se houve anterioridades.
       Tudo isso vai direto para o **Formulário de Busca de Anterioridade**.
+      **Já tem a busca num PDF?** O botão "Pedido para converter um PDF de busca em JSON" copia um pedido para colar numa IA junto com o PDF (`docs/pedido-converter-pdf-busca-em-json.md`). A IA não refaz a busca: só transcreve o relatório para o mesmo JSON, usando as características C1…Cn do seu pedido.
    4. Documentos e quadro comparativo, com as características tiradas das reivindicações.
    5. Buscas à mão, só para o que faltar.
 
@@ -70,6 +71,12 @@ local, com `python3 -m http.server`.
    | 8 | Relatório da busca de anterioridade (registro, documentos, quadro comparativo, prazos) | Equipe / NIT |
 
    Os documentos do INPI saem como os modelos da equipe: Arial 12, espaçamento 1,5, texto justificado, parágrafos numerados e "página / total" no cabeçalho.
+
+## Desenhos, inventores e relatório
+
+- **Desenhos (antes do relatório):** figuras em células, como no Colab ("Figura 1" a "Figura n"). Cada figura pode ser enviada (PNG, JPG, SVG) ou desenhada (retângulo, elipse, linha, texto). As setas numeradas seguem a ordem; a mesma peça pode ter várias setas com o mesmo número e todas usam a mesma descrição. As descrições preenchem o relatório, e os textos da figura têm tradução PT/EN/ES.
+- **Inventores:** os nomes da ficha e da aba Inventores ficam sincronizados. Há exportação e importação de um JSON só de inventores, para reaproveitar em outros pedidos.
+- **Melhorar o relatório com IA:** o app gera um pedido para a IA reescrever o relatório em linguagem de patente: geral, amarrado e suficiente para um técnico reproduzir (LPI art. 24), sem revelar know-how que não é essencial. A resposta colada atualiza os campos, e dá para desfazer.
 
 ## Exportar e continuar depois
 

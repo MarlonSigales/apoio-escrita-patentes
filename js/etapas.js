@@ -71,45 +71,17 @@ PAGINAS.inicio = {
     }
 };
 
-// ------------------------------------------------------------ ENTENDA
-PAGINAS.entenda = {
-    render(p) {
-        const nat = (v, t, d) => `<button type="button" class="opcao tipo ${p.natureza === v ? 'ativo' : ''}" data-acao="natureza" data-v="${v}"><b>${t}</b><span>${d}</span></button>`;
-        return `${cabecalho('entenda', 'A patente dá ao titular o direito de impedir que outros produzam, usem, vendam ou importem a invenção sem autorização. Escolha o tipo de pedido e registre se a ideia já foi divulgada.')}
-        <div class="card"><h2>Qual é o seu caso?</h2><div class="comecar-opcoes">
-            ${nat('PI', '🔬 Patente de invenção (PI)', 'Tecnologia nova (produto ou processo). Precisa de novidade, atividade inventiva e aplicação industrial. Vale 20 anos.')}
-            ${nat('MU', '🛠️ Modelo de utilidade (MU)', 'Nova forma ou disposição de um objeto de uso prático que melhora o uso ou a fabricação. Precisa de novidade e ato inventivo. Desenhos obrigatórios. Vale 15 anos.')}
-        </div>
-        <details class="nota"><summary>Na dúvida? Faça o teste</summary><ul class="checklist">
-            <li>É um <b>processo</b>, composição química ou método? → <b>PI</b>.</li>
-            <li>É um <b>objeto</b> cuja novidade está na <b>forma ou disposição</b> das peças, que melhora o uso ou a fabricação? → <b>MU</b>.</li>
-            <li>O princípio de funcionamento é novo (não só a forma)? → <b>PI</b>.</li></ul></details></div>
-        <div class="card"><h2>⏳ Divulgações (cuidado com o prazo!)</h2>
-        <p class="nota">Defesa de TCC, pôster, artigo, vídeo ou feira contam como divulgação. Pela Lei 9.279/96 (art. 12) você tem <b>12 meses</b> da primeira divulgação para depositar (período de graça). O ideal é depositar <b>antes</b> de divulgar.</p>
-        ${p.contexto.divulgacoes.length ? `<div class="tabela-rolagem"><table class="tabela"><thead><tr><th>Data</th><th>Meio (defesa, congresso, artigo…)</th><th>Prazo final</th><th></th></tr></thead><tbody>${p.contexto.divulgacoes.map(d => `<tr><td><input type="date" data-c="contexto.divulgacoes.#${d.id}.data" value="${escAttr(d.data)}"></td><td><input type="text" data-c="contexto.divulgacoes.#${d.id}.meio" value="${escAttr(d.meio)}"></td><td>${d.data ? dataBR(somarMeses(d.data, 12)) : '—'}</td><td class="col-acao"><button type="button" class="btn-icone" data-acao="remover" data-lista="contexto.divulgacoes" data-id="${d.id}" title="Remover">✕</button></td></tr>`).join('')}</tbody></table></div>` : ''}
-        <div class="botoes"><button type="button" class="btn btn-secondary btn-sm" data-acao="add-divulgacao">＋ Divulgação</button>
-        <label class="campo-inline"><input type="checkbox" data-c="revisao.semDivulgacao" ${p.revisao.semDivulgacao ? 'checked' : ''}> Não houve nenhuma divulgação</label></div>
-        ${alertas('entenda')}</div>
-        <div class="card"><h2>O que o INPI exige no pedido</h2><ul class="checklist">
-            <li>📝 <b>Relatório descritivo</b> — descreve a invenção para que um técnico consiga reproduzi-la.</li>
-            <li>⚖️ <b>Reivindicações</b> — definem o que fica protegido.</li>
-            <li>🖼️ <b>Desenhos</b> — obrigatórios para MU; para PI, quando houver.</li>
-            <li>✂️ <b>Resumo</b> — síntese do pedido.</li>
-            <li>🧬 <b>Listagem de sequências</b> — só para PI com sequências biológicas essenciais.</li></ul>
-        <p class="nota">Fonte: ${LINK('https://www.gov.br/inpi/pt-br/servicos/patentes/guia-basico', 'Guia Básico de Patentes do INPI')} · ${LINK('https://www.gov.br/inpi/pt-br/servicos/patentes/legislacao', 'Legislação')}</p></div>`;
-    }
-};
-
 // ------------------------------------------------------------ FICHA
 PAGINAS.ficha = {
     render(p) {
         const f = p.ficha;
+        const nat = (v, t, d) => `<button type="button" class="opcao tipo ${p.natureza === v ? 'ativo' : ''}" data-acao="natureza" data-v="${v}"><b>${t}</b><span>${d}</span></button>`;
         return `${cabecalho('ficha', 'Comece por aqui. Conte a invenção com as suas palavras: desta ficha saem os rascunhos do resumo e das reivindicações, a classificação, os termos das buscas, o relatório, os desenhos e os formulários da universidade. Se você já tem o resumo e as reivindicações escritos, cole-os nas abas deles: a ficha é completada a partir deles.')}
         <div class="card"><div class="botoes"><button type="button" class="btn btn-primary" data-acao="pre-preencher">⚡ Pré-preencher as outras abas com esta ficha</button></div>
         <p class="nota">O pré-preenchimento também acontece sozinho quando você abre as próximas abas. Ele só completa o que está vazio.</p></div>
         <div class="card"><div class="grade-campos">
             ${campo('titulo', 'Título', { largo: true, dica: 'curto, técnico, sem marca' })}
-            ${campo('natureza', 'Tipo de pedido', { tipo: 'select', opts: [['', '— escolher (veja a aba Entenda) —'], ['PI', 'Patente de invenção (PI)'], ['MU', 'Modelo de utilidade (MU)']] })}
+            <div class="campo"><span class="rotulo">Tipo de pedido</span><a class="btn-link" href="#/ficha" data-acao="ir-pi-mu">${p.natureza === 'PI' ? '🔬 Patente de invenção (PI)' : p.natureza === 'MU' ? '🛠️ Modelo de utilidade (MU)' : '— escolha no quadro "PI ou MU?" abaixo —'}</a></div>
             ${campo('contexto.inventores', 'Inventores (um por linha)', { tipo: 'textarea', linhas: 3, dica: 'vão para a aba Inventores' })}
             ${campo('area', 'Área técnica', { ph: 'Ex.: máquinas agrícolas, eletrônica embarcada' })}
             ${campo('contexto.instituicao', 'Instituição')}
@@ -126,7 +98,28 @@ PAGINAS.ficha = {
             ${campo('ficha.aplicacoes', 'Onde pode ser aplicada', { tipo: 'textarea', linhas: 3 })}
             ${campo('ficha.ensaios', 'Ensaios e resultados (se houver)', { tipo: 'textarea', linhas: 3 })}
             ${campo('ficha.concorrentes', 'Produtos ou empresas concorrentes', { tipo: 'textarea', linhas: 3 })}
-        </div></div>`;
+        </div></div>
+        <div class="card" id="pi-ou-mu"><h2>📘 PI ou MU? Qual é o seu caso?</h2><p class="nota">A patente dá ao titular o direito de impedir que outros produzam, usem, vendam ou importem a invenção sem autorização. A escolha abaixo vale para todo o pedido (resumo, reivindicações, memorando, prazos e GRU).</p><div class="comecar-opcoes">
+            ${nat('PI', '🔬 Patente de invenção (PI)', 'Tecnologia nova (produto ou processo). Precisa de novidade, atividade inventiva e aplicação industrial. Vale 20 anos.')}
+            ${nat('MU', '🛠️ Modelo de utilidade (MU)', 'Nova forma ou disposição de um objeto de uso prático que melhora o uso ou a fabricação. Precisa de novidade e ato inventivo. Desenhos obrigatórios. Vale 15 anos.')}
+        </div>
+        <details class="nota"><summary>Na dúvida? Faça o teste</summary><ul class="checklist">
+            <li>É um <b>processo</b>, composição química ou método? → <b>PI</b>.</li>
+            <li>É um <b>objeto</b> cuja novidade está na <b>forma ou disposição</b> das peças, que melhora o uso ou a fabricação? → <b>MU</b>.</li>
+            <li>O princípio de funcionamento é novo (não só a forma)? → <b>PI</b>.</li></ul></details></div>
+        <div class="card" id="divulgacoes"><h2>⏳ Divulgações (cuidado com o prazo!)</h2>
+        <p class="nota">Defesa de TCC, pôster, artigo, vídeo ou feira contam como divulgação. Pela Lei 9.279/96 (art. 12) você tem <b>12 meses</b> da primeira divulgação para depositar (período de graça). O ideal é depositar <b>antes</b> de divulgar.</p>
+        ${p.contexto.divulgacoes.length ? `<div class="tabela-rolagem"><table class="tabela"><thead><tr><th>Data</th><th>Meio (defesa, congresso, artigo…)</th><th>Prazo final</th><th></th></tr></thead><tbody>${p.contexto.divulgacoes.map(d => `<tr><td><input type="date" data-c="contexto.divulgacoes.#${d.id}.data" value="${escAttr(d.data)}"></td><td><input type="text" data-c="contexto.divulgacoes.#${d.id}.meio" value="${escAttr(d.meio)}"></td><td>${d.data ? dataBR(somarMeses(d.data, 12)) : '—'}</td><td class="col-acao"><button type="button" class="btn-icone" data-acao="remover" data-lista="contexto.divulgacoes" data-id="${d.id}" title="Remover">✕</button></td></tr>`).join('')}</tbody></table></div>` : ''}
+        <div class="botoes"><button type="button" class="btn btn-secondary btn-sm" data-acao="add-divulgacao">＋ Divulgação</button>
+        <label class="campo-inline"><input type="checkbox" data-c="revisao.semDivulgacao" ${p.revisao.semDivulgacao ? 'checked' : ''}> Não houve nenhuma divulgação</label></div>
+        ${alertas('divulgacao')}</div>
+        <details class="card"><summary><b>O que o INPI exige no pedido</b></summary><ul class="checklist">
+            <li>📝 <b>Relatório descritivo</b> — descreve a invenção para que um técnico consiga reproduzi-la.</li>
+            <li>⚖️ <b>Reivindicações</b> — definem o que fica protegido.</li>
+            <li>🖼️ <b>Desenhos</b> — obrigatórios para MU; para PI, quando houver.</li>
+            <li>✂️ <b>Resumo</b> — síntese do pedido.</li>
+            <li>🧬 <b>Listagem de sequências</b> — só para PI com sequências biológicas essenciais.</li></ul>
+        <p class="nota">Fonte: ${LINK('https://www.gov.br/inpi/pt-br/servicos/patentes/guia-basico', 'Guia Básico de Patentes do INPI')} · ${LINK('https://www.gov.br/inpi/pt-br/servicos/patentes/legislacao', 'Legislação')}</p></details>`;
     }
 };
 
@@ -187,9 +180,9 @@ PAGINAS.buscas = {
         <div class="card cartao-ia"><h2>2. 🤖 Gere o prompt e peça a busca para a IA</h2><p class="nota">O prompt já sai preenchido com a sua invenção, as classes, os termos em PT/EN/ES, as características C1, C2… das reivindicações e as estratégias A–G para as 5 bases. Ele pede o retorno <b>em JSON</b> num formato fixo (gasta menos créditos e é importado sem erro) e diz para a IA <b>parar e pedir que você resolva CAPTCHA, verificação ou login manualmente</b>.</p>
         <div class="botoes"><button type="button" class="btn btn-primary" data-acao="copiar-md">📋 Copiar prompt</button><button type="button" class="btn btn-secondary" data-acao="baixar-md">⬇ Baixar .md</button></div></div>
 
-        <div class="card"><h2>3. 📥 Importe o retorno (JSON)</h2><p class="nota">Cole o JSON que a IA devolveu ou abra o arquivo <code>.json</code>. O app lê as contagens por base e sequência, os documentos (número, título, categoria, relevância, link e o quadro S/P/N), a conclusão, os diferenciais e as lacunas, e leva tudo para o <b>Formulário de Busca de Anterioridade</b> e para o relatório da busca. Retornos antigos em texto (PDF copiado, tabelas, "Sensor de pressão / 1843") também são aceitos.</p>
+        <div class="card"><h2>3. 📥 Importe o retorno (JSON)</h2><p class="nota">Cole o JSON que a IA devolveu ou abra o arquivo <code>.json</code>. O app lê as contagens por base e sequência, os documentos (número, título, categoria, relevância, link e o quadro S/P/N), a conclusão, os diferenciais e as lacunas, e leva tudo para o <b>Formulário de Busca de Anterioridade</b> e para o relatório da busca. Retornos antigos em texto (PDF copiado, tabelas, "Sensor de pressão / 1843") também são aceitos. <b>Já tem a busca num PDF?</b> Use o botão "Pedido para converter um PDF de busca em JSON": cole o pedido numa IA junto com o PDF e traga o JSON para cá.</p>
         <textarea id="retorno-busca" rows="7" placeholder='Cole aqui o JSON: { "formato": "apoio-escrita-patentes-busca", "registro": [...], "documentos": [...] }'></textarea>
-        <div class="botoes"><button type="button" class="btn btn-primary" data-acao="colar-retorno">⇩ Ler o retorno colado</button><button type="button" class="btn btn-secondary" data-acao="arquivo-retorno">📂 Abrir arquivo .json</button>${p.busca.retorno ? `<span class="nota">Retorno já colado: ${palavras(p.busca.retorno)} palavras.</span><button type="button" class="btn-link" data-acao="limpar-retorno">apagar retorno e contagens</button>` : ''}</div>
+        <div class="botoes"><button type="button" class="btn btn-primary" data-acao="colar-retorno">⇩ Ler o retorno colado</button><button type="button" class="btn btn-secondary" data-acao="arquivo-retorno">📂 Abrir arquivo .json</button><button type="button" class="btn btn-secondary" data-acao="copiar-converter-pdf" title="Para quando a busca já foi feita e o resultado está num PDF">📄→{ } Pedido para converter um PDF de busca em JSON</button>${p.busca.retorno ? `<span class="nota">Retorno já colado: ${palavras(p.busca.retorno)} palavras.</span><button type="button" class="btn-link" data-acao="limpar-retorno">apagar retorno e contagens</button>` : ''}</div>
         ${reg.length ? `<h3>Contagens lidas (vão para o formulário)</h3><div class="tabela-rolagem"><table class="tabela"><thead><tr><th>Base</th><th>Palavra-chave / sequência</th><th>Nº de documentos</th><th></th></tr></thead><tbody>${reg.map(r => `<tr><td><select data-c="busca.registroColado.#${r.id}.base">${Object.keys(BASES).map(k => `<option value="${k}" ${r.base === k ? 'selected' : ''}>${BASES[k].nome}</option>`).join('')}</select></td><td><input type="text" data-c="busca.registroColado.#${r.id}.consulta" value="${escAttr(r.consulta)}"></td><td class="col-num"><input type="number" data-c="busca.registroColado.#${r.id}.n" value="${escAttr(r.n)}" style="width:9rem"></td><td class="col-acao"><button type="button" class="btn-icone" data-acao="remover" data-lista="busca.registroColado" data-id="${r.id}">✕</button></td></tr>`).join('')}</tbody></table></div>` : ''}
         <button type="button" class="btn btn-secondary btn-sm" data-acao="add-registro">＋ Contagem à mão</button>
         ${p.busca.notaRetorno ? `<div class="grade-campos">${campo('busca.notaRetorno', 'Conclusão lida do retorno (vira a nota explicativa do formulário)', { tipo: 'textarea', largo: true, linhas: 3 })}</div>` : ''}</div>
@@ -236,7 +229,20 @@ PAGINAS.relatorio = {
             ['descricao', 'Descrição da invenção', 'Como é feita e como funciona, citando os números de referência (01), (02)…'], ['exemplos', 'Exemplos de concretizações', 'Formas de uso e de execução; resultados de ensaio.']];
         return `${cabecalho('relatorio', 'O relatório descritivo explica a invenção de forma clara e completa, para que um técnico do assunto consiga reproduzi-la. Os parágrafos são numerados automaticamente no documento.')}
         <div class="card"><div class="botoes"><button type="button" class="btn btn-primary" data-acao="rascunho-tudo" data-parte="relatorio">✨ Rascunho de todas as seções vazias</button><button type="button" class="btn btn-secondary" data-acao="baixar-doc" data-doc="relatorio">⬇ Baixar .docx</button></div></div>
-        <div class="card"><h3 class="titulo-doc">${esc(tituloPedido(p))}</h3><div class="grade-campos">${sec.map(([k, t, d]) => campo('relatorio.' + k, t, { tipo: 'textarea', largo: true, linhas: k === 'descricao' ? 9 : 5, dica: d, rasc: k })).join('')}</div>${alertas('relatorio')}</div>`;
+        <div class="card"><h3 class="titulo-doc">${esc(tituloPedido(p))}</h3><div class="grade-campos">${sec.map(([k, t, d]) => campo('relatorio.' + k, t, { tipo: 'textarea', largo: true, linhas: k === 'descricao' ? 9 : 5, dica: d, rasc: k })).join('')}</div>${alertas('relatorio')}</div>
+        ${PAGINAS.relatorio.ia(p)}`;
+    },
+    ia(p) {
+        const m = p.melhoriaRelatorio;
+        const lst = (tit, xs, cls) => xs && xs.length ? `<p class="nota"><b>${tit}</b></p><ul class="alertas">${xs.map(x => `<li class="${cls}">${esc(x)}</li>`).join('')}</ul>` : '';
+        return `<div class="card cartao-ia"><h2>🤖 Melhorar o relatório com IA (linguagem de patente)</h2>
+        <p class="nota">1. Copie o prompt e cole numa IA. Ele já leva o relatório atual, as reivindicações, os componentes, as figuras e a busca, e pede o texto <b>o mais geral possível</b>, <b>amarrado</b> às reivindicações e <b>suficiente para um técnico no assunto reproduzir</b>, sem expor know-how que não seja necessário (código, calibração, fornecedores, custos).<br>2. Cole a resposta (JSON) abaixo e clique em "Atualizar o relatório": as seções são substituídas, e a versão anterior fica guardada para desfazer.</p>
+        <p class="nota">⚖️ A lei exige descrição <b>suficiente</b> (art. 24 da Lei 9.279/96): esconder algo essencial para realizar a invenção pode anular a patente. O que dá para guardar é o que não é necessário para reproduzi-la.</p>
+        <div class="botoes"><button type="button" class="btn btn-primary" data-acao="copiar-prompt-relatorio">📋 Copiar prompt</button><button type="button" class="btn btn-secondary" data-acao="baixar-prompt-relatorio">⬇ Baixar .md</button></div>
+        <textarea id="resposta-relatorio" rows="6" placeholder='Cole aqui a resposta da IA: { "formato": "apoio-escrita-patentes-relatorio", "relatorio": { ... } }'></textarea>
+        <div class="botoes"><button type="button" class="btn btn-primary" data-acao="aplicar-relatorio-ia">⇩ Atualizar o relatório</button>${p.relatorioAnterior ? '<button type="button" class="btn btn-secondary" data-acao="desfazer-relatorio-ia">↶ Voltar à versão anterior</button>' : ''}</div>
+        ${m ? `<div class="melhoria"><p class="nota">Última atualização pela IA: ${new Date(m.data).toLocaleString('pt-BR')} — seções: ${m.secoes.map(esc).join(', ')}.</p>
+            ${lst('Características das reivindicações sem suporte no texto (corrija):', m.semSuporte, 'erro')}${lst('Pendências para a suficiência:', m.pendencias, 'aviso')}${lst('Termos trocados por genéricos:', m.termos, 'ok')}${lst('Observações:', m.observacoes, 'ok')}</div>` : ''}</div>`;
     }
 };
 
@@ -276,14 +282,28 @@ PAGINAS.reivindicacoes = {
 // ------------------------------------------------------------ DESENHOS
 PAGINAS.desenhos = {
     render(p) {
-        return `${cabecalho('desenhos', 'Figuras em preto e branco, sem textos além dos indispensáveis, com os números de referência dos componentes. Obrigatórias para modelo de utilidade.')}
-        <div class="card"><div class="botoes"><button type="button" class="btn btn-primary" data-acao="add-desenho">＋ Figura</button><button type="button" class="btn btn-secondary" data-acao="baixar-doc" data-doc="desenhos">⬇ Baixar .docx</button></div></div>
-        <div class="grade-desenhos">${p.desenhos.map((d, i) => `<div class="card desenho"><div class="card-topo"><h3>FIGURA ${i + 1}</h3><button type="button" class="btn-icone" data-acao="remover" data-lista="desenhos" data-id="${d.id}">✕</button></div>
-            ${d.img ? `<img data-img="${escAttr(d.img)}" alt="Figura ${i + 1}">` : '<div class="foto-vazia">sem imagem</div>'}
-            <div class="botoes"><button type="button" class="btn btn-secondary btn-sm" data-acao="imagem-desenho" data-id="${d.id}">🖼️ ${d.img ? 'Trocar' : 'Escolher'} imagem</button></div>
-            <label>Legenda (vai para a breve descrição)<input type="text" data-c="desenhos.#${d.id}.legenda" value="${escAttr(d.legenda)}" placeholder="ilustra o diagrama de blocos…"></label></div>`).join('') || '<div class="vazio">Nenhuma figura.</div>'}</div>
-        <div class="card"><label class="campo-inline">Figura mais representativa (vai no resumo) <select data-c="figuraResumo">${p.desenhos.map((d, i) => `<option value="${i + 1}" ${String(p.figuraResumo) === String(i + 1) ? 'selected' : ''}>FIGURA ${i + 1}</option>`).join('')}</select></label>${alertas('desenhos')}</div>`;
-    }
+        const ins = i => `<div class="fig-inserir"><button type="button" class="btn btn-secondary btn-sm" data-acao="add-desenho" data-pos="${i}">＋ Figura aqui</button></div>`;
+        const celula = (d, i) => `<div class="card fig-celula" data-fig="${d.id}">
+            <div class="card-topo"><h3>Figura ${i + 1}${String(p.figuraResumo) === String(i + 1) ? ' <span class="selo-guia">vai no resumo</span>' : ''}</h3><div class="botoes">
+                <button type="button" class="btn-icone" data-acao="fig-mover" data-fig="${d.id}" data-dir="-1" title="Subir" ${i ? '' : 'disabled'}>↑</button><button type="button" class="btn-icone" data-acao="fig-mover" data-fig="${d.id}" data-dir="1" title="Descer" ${i < p.desenhos.length - 1 ? '' : 'disabled'}>↓</button>
+                <button type="button" class="btn-icone" data-acao="remover" data-lista="desenhos" data-id="${d.id}" title="Apagar a figura">✕</button></div></div>
+            <label>Legenda <small>(completa a frase "A FIGURA ${i + 1} …" na breve descrição dos desenhos)</small><input type="text" data-c="desenhos.#${d.id}.legenda" value="${escAttr(d.legenda)}" placeholder="ilustra o diagrama de blocos do sistema…"></label>
+            <div class="fig-ferr" data-fig="${d.id}">${FIG_TOOLS.map(([t, ic, tit]) => `<button type="button" class="ferr ${(Ed.tool[d.id] || 'sel') === t ? 'ativo' : ''}" data-acao="fig-tool" data-fig="${d.id}" data-tool="${t}" title="${escAttr(tit)}">${ic}</button>`).join('')}
+                <label class="campo-inline" title="Número da próxima seta">nº <select data-fig-num-barra="${d.id}">${htmlOpcoesNumero(p, d)}</select></label>
+                <span class="sep"></span>
+                <button type="button" class="btn btn-secondary btn-sm" data-acao="imagem-desenho" data-id="${d.id}" title="Foto, PNG, JPG ou SVG feito em outro programa (ex.: draw.io)">🖼️ ${d.img ? 'Trocar' : 'Subir'} imagem</button>
+                ${d.img ? `<button type="button" class="btn-link" data-acao="fig-tirar-fundo" data-fig="${d.id}">tirar imagem</button>` : ''}
+                <button type="button" class="btn-icone" data-acao="fig-desfazer" data-fig="${d.id}" title="Desfazer (Ctrl+Z)">↶</button></div>
+            <div class="fig-area"><div class="fig-tela" data-fig="${d.id}"></div><div class="fig-painel" data-fig="${d.id}"></div></div>
+            <div class="fig-secoes" data-fig="${d.id}">${htmlSecoesFigura(p, d)}</div></div>`;
+        return `${cabecalho('desenhos', 'Faça os desenhos antes do relatório: os números das setas viram a lista de componentes e já escrevem a breve descrição dos desenhos e a descrição da invenção. Figuras em preto e branco, com o mínimo de texto. Obrigatórias para modelo de utilidade.')}
+        <div class="card"><div class="botoes"><button type="button" class="btn btn-primary" data-acao="add-desenho">＋ Nova figura</button><button type="button" class="btn btn-secondary" data-acao="fig-relatorio">↻ Escrever a breve descrição dos desenhos</button><button type="button" class="btn btn-secondary" data-acao="baixar-doc" data-doc="desenhos">⬇ Baixar .docx</button>
+            <label class="campo-inline">Idioma dos textos <select data-c="idiomaDesenhos"><option value="pt" ${p.idiomaDesenhos === 'pt' ? 'selected' : ''}>Português</option><option value="en" ${p.idiomaDesenhos === 'en' ? 'selected' : ''}>Inglês</option><option value="es" ${p.idiomaDesenhos === 'es' ? 'selected' : ''}>Espanhol</option></select></label></div>
+        <p class="nota"><b>Como desenhar:</b> suba uma imagem (foto ou desenho feito no ${LINK('https://app.diagrams.net/', 'draw.io')} e exportado em PNG ou SVG) ou desenhe direto com ▭ ◯ ╱ T. Depois use <b>➘</b>: arraste a partir da peça até onde o número deve ficar. O número segue a ordem (01, 02…) e fica sempre na horizontal. Para girar, arraste a ponta onde está o número. Para repetir um número, escolha-o em "nº" ou no painel da seta.</p></div>
+        ${p.desenhos.length ? p.desenhos.map((d, i) => (i ? ins(i) : '') + celula(d, i)).join('') + ins(p.desenhos.length) : '<div class="vazio">Nenhuma figura ainda. <button type="button" class="btn btn-primary" data-acao="add-desenho">＋ Figura 1</button></div>'}
+        <div class="card"><label class="campo-inline">Figura mais representativa (vai no resumo) <select data-c="figuraResumo">${p.desenhos.map((d, i) => `<option value="${i + 1}" ${String(p.figuraResumo) === String(i + 1) ? 'selected' : ''}>Figura ${i + 1}</option>`).join('')}</select></label>${alertas('desenhos')}</div>`;
+    },
+    depois(p) { for (const d of p.desenhos) { normalizarFigura(d); redesenhar(d.id); } }
 };
 
 // ------------------------------------------------------------ RESUMO
@@ -314,7 +334,9 @@ PAGINAS.inventores = {
             ${campo(c + 'percentual', '% na participação (1/3)', { tipo: 'number' })}</div>
             ${lista === 'inventores' ? `<label class="campo-inline"><input type="checkbox" data-acao="notificante" data-id="${i.id}" ${i.notificante ? 'checked' : ''}> É o(a) notificante (responsável pelas informações; servidor da universidade)</label>` : ''}</div>`; };
         return `${cabecalho('inventores', 'Pela universidade, o depositante (titular) é a instituição e os inventores são as pessoas que contribuíram intelectualmente (ato inventivo). Quem só coletou dados ou fez experimentos não é inventor, mas pode dividir a participação nos resultados.')}
-        <div class="card aviso-privado">🔒 CPF, endereço e telefone ficam <b>só neste navegador</b> e no ZIP que você baixar. Não publique o ZIP nem cole esses dados numa IA.</div>
+        <div class="card aviso-privado">🔒 CPF, endereço e telefone ficam <b>só neste navegador</b> e nos arquivos que você baixar. Não publique esses arquivos nem cole esses dados numa IA.</div>
+        <div class="card"><div class="botoes"><button type="button" class="btn btn-secondary" data-acao="exportar-inventores">💾 Exportar inventores (.json)</button><button type="button" class="btn btn-secondary" data-acao="importar-inventores">📥 Importar inventores (.json)</button></div>
+        <p class="nota">Os nomes ficam iguais aos da lista de inventores em <a href="#/ficha">Sua invenção</a>: quem você incluir lá aparece aqui, e quem você incluir aqui aparece lá. Para reaproveitar a equipe em outro pedido, exporte os inventores e importe no outro. Quem já estiver cadastrado (mesmo CPF ou nome) só tem os campos vazios completados. Também dá para importar os inventores de um pedido exportado (.json).</p></div>
         ${u.inventores.map((i, k) => ficha(i, 'inventores', k)).join('')}
         <div class="botoes"><button type="button" class="btn btn-primary" data-acao="add-inventor">＋ Inventor(a)</button><button type="button" class="btn btn-secondary" data-acao="add-colaborador">＋ Colaborador(a) (não inventor)</button></div>
         ${u.colaboradores.map((i, k) => ficha(i, 'colaboradores', k)).join('')}
@@ -334,7 +356,7 @@ PAGINAS.universidade = {
         <div class="card"><div class="card-topo"><h2>6. Formulário de Informação Tecnológica</h2><button type="button" class="btn btn-secondary btn-sm" data-acao="baixar-doc" data-doc="infotec">⬇ .docx</button></div>
         <div class="grade-campos">${campo('universidade.areaPredominante', '1.1.1 Área predominante', { tipo: 'select', opts: AREAS_PREDOMINANTES })}${campo('universidade.consiste', '1.2 Em que consiste', { tipo: 'select', opts: CONSISTE })}</div>
         <label>1.1.2 Áreas abrangidas</label><div class="chips">${AREAS_ABRANGIDAS.map(a => `<label class="chip ${u.areasAbrangidas.includes(a) ? 'chip-fixo' : ''}"><input type="checkbox" data-acao="area" data-v="${escAttr(a)}" ${u.areasAbrangidas.includes(a) ? 'checked' : ''}> ${esc(a)}</label>`).join('')}</div>
-        <p class="nota">1.3 Divulgações: vêm da etapa "Entenda" (${p.contexto.divulgacoes.length ? p.contexto.divulgacoes.length + ' registrada(s)' : 'nenhuma'}). 1.5 Título e 1.6 palavras-chave vêm da ficha e dos termos da busca (${palavrasChave(p).length} palavras).</p>
+        <p class="nota">1.3 Divulgações: vêm da aba "Sua invenção" (${p.contexto.divulgacoes.length ? p.contexto.divulgacoes.length + ' registrada(s)' : 'nenhuma'}). 1.5 Título e 1.6 palavras-chave vêm da ficha e dos termos da busca (${palavrasChave(p).length} palavras).</p>
         <div class="grade-campos"><label>1.4.1 Patrimônio genético${rad('universidade.patrimonioGenetico', ['Nenhum', 'Material biológico', 'Conhecimento tradicional'])}</label><label>1.4.2 Fauna/flora brasileira${rad('universidade.faunaFlora', ['Não', 'Sim'])}</label><label>1.4.3 Conhecimento tradicional${rad('universidade.conhecimentoTradicional', ['Não', 'Sim'])}</label>
         ${campo('universidade.contexto', '1.8 a. Contexto tecnológico do problema', { tipo: 'textarea', largo: true, linhas: 3, ph: f.problema })}
         ${campo('universidade.comoHoje', '1.8 b. Como o problema é resolvido hoje', { tipo: 'textarea', largo: true, linhas: 3, ph: f.estadoTecnica })}

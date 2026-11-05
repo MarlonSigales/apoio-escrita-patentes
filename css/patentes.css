@@ -159,3 +159,28 @@ input[type=date] { display: block; width: 100%; padding: 0.42rem 0.6rem; border:
 .pr-dep { color: #6b5300; }
 .pr-exp { font-weight: 700; color: var(--verde-escuro); text-decoration: underline; }
 @media (max-width: 700px) { .reiv-campos { grid-template-columns: 1fr; } .reivindicacao.dependente { margin-left: .4rem; } }
+/* ---------- editor de figuras (células) ---------- */
+.fig-celula { border-left: 4px solid var(--verde); }
+.fig-inserir { display: flex; justify-content: center; margin: -0.4rem 0 0.4rem; opacity: .35; transition: opacity .2s; }
+.fig-inserir:hover, .fig-inserir:focus-within { opacity: 1; }
+.fig-ferr { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem; margin: .5rem 0; padding: .35rem; background: var(--verde-claro); border: 1px solid #cfe5dd; border-radius: 8px; }
+.fig-ferr .ferr { font: inherit; font-size: 1.05rem; width: 38px; height: 34px; border: 1px solid var(--borda); background: #fff; border-radius: 6px; cursor: pointer; }
+.fig-ferr .ferr.ativo { background: var(--teal); color: #fff; border-color: var(--teal); }
+.fig-ferr .sep { flex: 1 1 auto; }
+.fig-ferr .campo-inline { margin: 0; font-weight: 400; }
+.fig-area { display: grid; grid-template-columns: 1fr 230px; gap: .6rem; align-items: start; }
+.fig-tela { border: 1px solid var(--borda); border-radius: 6px; background: #fff; overflow: hidden; }
+.fig-svg { display: block; width: 100%; height: auto; touch-action: none; user-select: none; cursor: crosshair; }
+.fig-svg .zona { stroke: transparent; fill: transparent; cursor: move; pointer-events: all; }
+.fig-svg .alca { fill: #fff; stroke: var(--verde); stroke-width: 3; cursor: grab; }
+.fig-svg .alca-giro { fill: var(--limao); }
+.fig-svg .selecao { fill: none; stroke: var(--verde); stroke-dasharray: 6 4; stroke-width: 2; pointer-events: none; }
+.fig-svg .el.sel line, .fig-svg .el.sel text { filter: drop-shadow(0 0 2px rgba(64,149,128,.9)); }
+.fig-painel { display: flex; flex-direction: column; gap: .4rem; font-size: .86rem; background: #fbfdfc; border: 1px solid var(--borda); border-radius: 6px; padding: .55rem; }
+.fig-painel label { font-size: .8rem; }
+.fig-sec { margin-top: .5rem; }
+.fig-sec summary { cursor: pointer; padding: .3rem 0; }
+@media (max-width: 800px) { .fig-area { grid-template-columns: 1fr; } }
+
+.melhoria { margin-top: .6rem; border-top: 1px dashed var(--borda); padding-top: .4rem; }
+.alertas li.ok { background: #eef7f4; color: #1f5f45; }

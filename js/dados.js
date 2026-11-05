@@ -90,7 +90,7 @@ function universidadePadrao() {
 
 function inventorVazio() {
     return { id: uid(), nome: '', cpf: '', celular: '', email: '', endereco: '', cep: '', cidade: '', uf: '', nacionalidade: 'Brasileira',
-        qualificacao: 'Aluno Graduação', vinculo: 'Sim', instituicao: '', inventor: true, notificante: false, percentual: '' };
+        qualificacao: 'Aluno Graduação', vinculo: 'Sim', instituicao: '', inventor: true, notificante: false, percentual: '', daFicha: false };
 }
 
 function normalizarPedido(p) {
@@ -106,7 +106,8 @@ function normalizarPedido(p) {
     p.versao = PE_VERSAO;
     p.ficha.componentes = (p.ficha.componentes || []).map(c => ({ id: c.id || uid(), num: String(c.num || ''), nome: c.nome || '', funcao: c.funcao || '' }));
     p.reivindicacoes = (p.reivindicacoes || []).map(r => ({ id: r.id || uid(), dep: r.dep ? Number(r.dep) : null, preambulo: r.preambulo || '', expressao: r.expressao || '', texto: r.texto || '' }));
-    p.desenhos = (p.desenhos || []).map(d => Object.assign({ id: d.id || uid(), legenda: d.legenda || '', img: d.img || '' }, d._url ? { _url: d._url } : {}));
+    p.desenhos = (p.desenhos || []).map(d => { const x = Object.assign({}, d, { id: d.id || uid(), legenda: d.legenda || '', img: d.img || '' }); x.w = Number(x.w) || 1000; x.h = Number(x.h) || 600; x.elementos = (Array.isArray(x.elementos) ? x.elementos : []).map(e => Object.assign({ id: uid() }, e)); return x; });
+    if (!['pt', 'en', 'es'].includes(p.idiomaDesenhos)) p.idiomaDesenhos = 'pt';
     p.fontes = (p.fontes || []).map(f => ({ id: f.id || uid(), nome: f.nome || 'Fonte', tipo: f.tipo || 'texto', texto: f.texto || '', data: f.data || hojeISO(), ativa: f.ativa !== false }));
     p.contexto.divulgacoes = (p.contexto.divulgacoes || []).map(d => ({ id: d.id || uid(), data: d.data || '', meio: d.meio || '' }));
     p.busca.resultados = (p.busca.resultados || []).map(r => Object.assign({ id: uid(), num: '', titulo: '', base: '', link: '', relevancia: 3, lido: 'resumo', nota: '', carac: {}, categoria: 'A', tipoDoc: 'Patente ou MU', publicacao: '' }, r));

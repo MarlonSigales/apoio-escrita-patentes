@@ -219,6 +219,37 @@ Responda **somente** com um bloco \`\`\`json contendo um objeto no formato abaix
 - Tratar divulgações anteriores da própria equipe como estado da técnica.
 - Responder em português, somente com o JSON do item 4.`;
 
+/** Trecho do prompt com o modelo do JSON de retorno (item 4), reaproveitado no pedido de conversão. */
+function esquemaJSONBusca() {
+    const i = MD_FIXO.indexOf('## 4. O QUE ENTREGAR'), f = MD_FIXO.indexOf('## 5. REGRAS');
+    return MD_FIXO.slice(i, f).replace(/^## 4\. O QUE ENTREGAR[^\n]*\n/, '').trim();
+}
+
+/**
+ * Pedido para uma IA transformar um relatório de busca já pronto (PDF, Word, planilha ou texto) no JSON padronizado
+ * deste app, sem refazer a busca. Leva as características C1, C2… do pedido para o quadro comparativo.
+ */
+function promptConverterBusca(p) {
+    const car = caracteristicasComparacao(p);
+    return `# Converter um relatório de busca de anterioridade (PDF) para o JSON do app "Apoio à Escrita de Patentes"
+
+Anexei (ou colei abaixo) um **relatório de busca de anterioridade** em PDF${p.titulo ? ` do pedido "${p.titulo}"` : ''}. **Não refaça a busca e não pesquise nada na internet:** apenas leia o relatório e transcreva o que ele contém para o JSON abaixo.
+
+## Como converter
+- **registro:** uma linha para cada sequência de busca do relatório (tabela de registro, "palavra-chave / nº de documentos" ou parecido), com a base, a estratégia (A–G, se o relatório indicar; senão ""), a sequência exata, o número de resultados e quantos foram triados. Bases que o relatório diz que não foram acessadas (CAPTCHA, bloqueio, login) entram com \`"acessada": false\` e o motivo em \`obs\`.
+- **base:** use um destes códigos: inpi, google, espacenet, patentscope, uspto, scholar, scielo, capes ou outra.
+- **documentos:** todos os documentos da tabela de documentos relevantes, com número, título, depositante, datas (AAAA-MM-DD), país, situação legal, link, tipo, categoria (X, Y, A, O, L; se o relatório não disser, use "A"), relevância de 1 a 5 (converta "alta/média/baixa" para 4/3/2) e o que foi lido. Em \`diferenca\`, resuma a nota ou observação do relatório sobre o documento.
+- **caracteristicas:** se o relatório tiver quadro comparativo, transcreva S/P/N/? usando os códigos abaixo. Se as características do relatório tiverem outros nomes, associe cada uma ao código mais próximo e diga em \`observacoes\` como associou.
+${car.length ? car.map((x, i) => `  - **C${i + 1}:** ${x}`).join('\n') : '  - {{liste aqui as características C1, C2… do seu pedido}}'}
+- **anterioridades_encontradas, nota_explicativa, diferenciais, ameacas, lacunas, recomendacoes, alerta_prazos:** venham do resumo executivo, da conclusão e das seções de diferenciais, lacunas e recomendações do relatório.
+- **Não invente:** o que o relatório não trouxer fica "" ou []; "não verificado" no relatório vira \`"situacao": "não verificada"\`. Mantenha os números dos documentos exatamente como estão.
+- Responda **somente** com o bloco \`\`\`json, sem texto antes ou depois, e não gere PDF.
+
+## Modelo do JSON
+${esquemaJSONBusca()}
+`;
+}
+
 function gerarMD(p) {
     const f = p.ficha, c = p.contexto;
     const v = (x, ph) => (String(x || '').trim() || `{{${ph}}}`);

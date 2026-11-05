@@ -104,7 +104,7 @@ async function imagensDesenhos(p) {
     let i = 0;
     for (const d of p.desenhos) {
         i++;
-        const blob = await Imagens.ler(d.img);
+        const blob = typeof figuraPNG === 'function' ? await figuraPNG(p, d) : await Imagens.ler(d.img);
         if (blob) {
             const bytes = new Uint8Array(await blob.arrayBuffer());
             const dim = await new Promise(ok => { const im = new Image(); im.onload = () => ok([im.naturalWidth, im.naturalHeight]); im.onerror = () => ok([800, 600]); im.src = URL.createObjectURL(blob); });
@@ -114,7 +114,7 @@ async function imagensDesenhos(p) {
             const ext = /png/.test(blob.type) ? 'png' : /gif/.test(blob.type) ? 'gif' : 'jpeg';
             imgs.push({ rid: 'rIdImg' + i, bytes, ext });
             blocos.push({ t: 'img', rid: 'rIdImg' + i, cx, cy });
-        } else blocos.push(T('[INSERIR A IMAGEM DA FIGURA ' + i + ']', { al: 'c' }));
+        } else blocos.push(T('[INSERIR A FIGURA ' + i + ']', { al: 'c' }));
         blocos.push(T('Figura ' + i, { al: 'c', depois: 360 }));
     }
     if (!p.desenhos.length) blocos.push(T('[Sem desenhos. Obrigatório para modelo de utilidade.]', { al: 'c' }));
