@@ -282,12 +282,23 @@ const ACOES = {
         avisar('Tudo limpo. Comece pela ficha "Sua invenção".', 'ok', 5000);
     },
     'abrir': async () => {
-        const [a] = await escolherArquivo('.zip,.json');
+        const [a] = await escolherArquivo('.json,.zip');
         if (!a) return;
         try {
-            App.p = /\.zip$/i.test(a.name) ? await lerZipProjeto(a) : normalizarPedido(JSON.parse(await a.text()));
-            App.placar = null; salvar(); atualizarPlacar(false); renderPagina(); avisar('Projeto aberto.');
-        } catch (e) { avisar('Não consegui abrir: ' + e.message, 'erro', 6000); }
+            const novo = /\.zip$/i.test(a.name) ? await lerZipProjeto(a) : await importarPedidoJSON(await a.text());
+            if (temConteudo() && !confirm(`Abrir "${novo.titulo || a.name}"? O pedido que está aberto agora será substituído (exporte o JSON dele antes, se quiser guardar).`)) return;
+            App.p = novo; App.placar = null; Armazem.salvar(App.p); atualizarPlacar(false);
+            const prox = proximaEtapa();
+            avisar(`Pedido "${App.p.titulo || 'sem título'}" aberto. Continue de onde parou.`, 'ok', 5000);
+            if (prox && location.hash !== '#/' + prox) location.hash = '#/' + prox; else renderPagina();
+        } catch (e) { avisar('Não consegui abrir: ' + e.message, 'erro', 7000); }
+    },
+    'exportar-json': async () => {
+        try {
+            baixarArquivo(new Blob([await exportarPedidoJSON(App.p)], { type: 'application/json' }), nomePeloTitulo(App.p, 'json'));
+            App.p.jogo.exportouEm = new Date().toISOString(); salvar();
+            avisar(`Exportado: "${nomePeloTitulo(App.p, 'json')}". Para continuar depois, use "Continuar um pedido".`, 'ok', 6000);
+        } catch (e) { avisar('Erro ao exportar: ' + e.message, 'erro', 6000); }
     },
     'rascunho'(el) {
         const k = el.dataset.k, c = el.dataset.c;
@@ -344,7 +355,7 @@ const ACOES = {
     },
     'baixar-tudo': async () => {
         try {
-            baixarArquivo(await zipFinal(App.p), nomeSeguro(App.p.titulo) + '-8-documentos.zip');
+            baixarArquivo(await zipFinal(App.p), nomePeloTitulo(App.p, 'zip').replace(/\.zip$/, ' - 8 documentos.zip'));
             if (!App.p.jogo.baixouTudo) { App.p.jogo.baixouTudo = true; confete(); }
             mudou();
         } catch (e) { avisar('Erro ao gerar o ZIP: ' + e.message, 'erro', 6000); }

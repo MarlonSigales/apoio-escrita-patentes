@@ -56,12 +56,14 @@ PAGINAS.inicio = {
             <div class="barra-xp grande"><i style="width:${pct}%"></i></div><small>${pct}% do pedido completo</small>
             ${prox ? `<div class="proximo-passo"><div class="proximo-passo-texto"><span class="proximo-passo-rotulo">próxima missão</span> ${ETAPAS.find(x => x.id === prox).icone} <b>${esc(ETAPAS.find(x => x.id === prox).titulo)}</b></div><a class="btn btn-primary" href="#/${prox}">Continuar ▶</a></div>` : ''}
         </div>
-        <div class="card"><div class="grade-campos">${campo('titulo', 'Título provisório da invenção', { largo: true, ph: 'Ex.: Dosador de fertilizantes com cilindro rotativo vertical' })}</div>
-        <p class="nota">Tudo fica salvo sozinho neste navegador. Para levar a outro computador, use "Baixar ZIP" (leva os 8 documentos e o projeto).</p></div>
+        <div class="card"><div class="grade-campos">${campo('titulo', 'Título provisório da invenção', { largo: true, ph: 'Ex.: Sistema de monitoramento de pressão para circuitos pneumáticos' })}</div>
+        <div class="botoes"><button type="button" class="btn btn-primary" data-acao="exportar-json">💾 Exportar o pedido (.json)</button><button type="button" class="btn btn-secondary" data-acao="abrir">📂 Continuar um pedido (.json)</button></div>
+        <p class="nota">Tudo fica salvo sozinho neste navegador. Para guardar, mandar ao orientador ou seguir em outro computador, exporte o JSON: o arquivo leva o nome do título${p.titulo ? ` (<b>${esc(nomePeloTitulo(p, 'json'))}</b>)` : ''} e tem tudo, inclusive as figuras. Depois é só usar "Continuar um pedido".${p.jogo.exportouEm ? ` Última exportação: ${new Date(p.jogo.exportouEm).toLocaleString('pt-BR')}.` : ''}</p></div>
         <div class="card"><h2>Comece rápido</h2><div class="comecar-opcoes">
             <button type="button" class="opcao" data-acao="importar-md"><b>⇪ Tenho o prompt da busca (.md)</b><span>Preenche ficha, termos, classes e buscas a partir do prompt de anterioridade.</span></button>
             <button type="button" class="opcao" data-acao="importar-docx"><b>📄 Tenho um pedido em Word</b><span>Lê Relatório, Reivindicações, Desenhos e Resumo (.docx) e preenche tudo.</span></button>
             <button type="button" class="opcao" data-acao="exemplo" data-ex="pressao"><b>🧪 Ver exemplo completo</b><span>Sistema de monitoramento de pressão para circuitos pneumáticos.</span></button>
+            <button type="button" class="opcao" data-acao="abrir"><b>📂 Continuar um pedido</b><span>Abra o JSON exportado antes (o arquivo com o título da patente) e siga de onde parou.</span></button>
             <button type="button" class="opcao" data-acao="novo"><b>🗑️ Começar do zero</b><span>Apaga tudo deste navegador e abre a ficha "Sua invenção" em branco.</span></button>
         </div></div>
         <div class="card"><h2>🏅 Medalhas</h2><div class="medalhas">${pl.medalhas.map(m => `<div class="medalha ${m.ok ? 'ganha' : ''}" title="${escAttr(m.desc)}"><span>${m.icone}</span><b>${esc(m.nome)}</b><small>${esc(m.desc)}</small></div>`).join('')}</div></div>
@@ -418,9 +420,9 @@ PAGINAS.entrega = {
         return `${cabecalho('entrega', 'Fim de jogo! Aqui estão os 8 documentos preenchidos, prontos para revisar com o orientador e entregar ao escritório de propriedade intelectual.')}
         <div class="card trofeu ${p.jogo.baixouTudo ? 'ganho' : ''}"><span class="trofeu-icone">🏆</span><div><b>${esc(pl.nivel[1])}</b> · ${pl.xp} XP · ${pl.medalhas.filter(m => m.ok).length}/${pl.medalhas.length} medalhas
         ${erros.length ? `<p class="nota">Ainda há ${erros.length} erro(s) na revisão: os documentos saem com [COMPLETAR] onde faltar. <a href="#/revisao">Ver revisão</a></p>` : '<p class="nota">Revisão sem erros. 🎉</p>'}</div>
-        <button type="button" class="btn btn-primary grande" data-acao="baixar-tudo">⬇ Baixar os 8 documentos (ZIP)</button></div>
+        <div class="botoes"><button type="button" class="btn btn-primary grande" data-acao="baixar-tudo">⬇ Baixar os 8 documentos (ZIP)</button><button type="button" class="btn btn-secondary" data-acao="exportar-json">💾 Exportar o pedido (.json)</button></div></div>
         ${['INPI', 'Universidade', 'Busca'].map(g => `<div class="card"><h2>${g === 'INPI' ? '📄 Pedido no INPI' : g === 'Universidade' ? '🏛️ Universidade (processo sigiloso no SEI)' : '🔎 Busca de anterioridade'}</h2><div class="lista-docs">${DOCUMENTOS.filter(d => d.grupo === g).map(d => `<div class="doc"><span class="doc-icone">📄</span><span class="doc-nome">${esc(d.nome)}</span><a href="#/${d.etapa}" class="btn-link">editar</a><button type="button" class="btn btn-secondary btn-sm" data-acao="baixar-doc" data-doc="${d.id}">⬇ .docx</button></div>`).join('')}</div></div>`).join('')}
-        <p class="nota">O ZIP também leva o projeto (pedido.json), para abrir de novo neste app, e o prompt de busca (.md). Ele contém dados pessoais dos inventores: não publique.</p>`;
+        <p class="nota">O ZIP também leva o pedido em JSON (com o nome do título), para continuar depois neste app, e o prompt de busca (.md). Eles contêm dados pessoais dos inventores: não publique.</p>`;
     }
 };
 

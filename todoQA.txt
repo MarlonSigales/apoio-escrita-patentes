@@ -26,6 +26,8 @@ Atualizado em 04/11/2026 (versão 2).
   "Sua invenção" é a 1ª aba depois do Início e pré-preenche resumo, reivindicações e as demais abas.
 8 [resolvido 04/11/2026] O prompt de busca pede o retorno em JSON padronizado (apoio-escrita-patentes-busca v1), não em PDF;
   o app importa o JSON (colado ou arquivo) direto no formulário e no relatório da busca; texto antigo continua aceito.
+9 [resolvido 04/11/2026] Exportar o pedido em JSON com o nome do título (figuras embutidas) e reimportar para continuar;
+  o ZIP leva o mesmo JSON.
 2 [futuro] Ampliar o catálogo IPC/CPC (hoje ~80 classes, foco em agro, eletrônica e controle).
 3 [futuro] Ler PDF direto como fonte (hoje: copiar e colar o texto).
 4 [futuro] Nuvem da equipe (MEGA), como no Projeto Conceitual, com senha e dados resguardados.

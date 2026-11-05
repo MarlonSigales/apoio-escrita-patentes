@@ -57,6 +57,13 @@ function ok(cond, nome) { RES.push([!!cond, nome]); }
     ok(componentesDoTexto('uma bateria (01) e um sensor de pressão (05)').length === 2, 'acha componentes numerados no texto');
     ok(palavras('um dois três') === 3, 'conta palavras');
     ok(somarMeses('2026-08-17', 12) === '2027-08-17', 'período de graça de 12 meses');
+    const exp = await exportarPedidoJSON(p);
+    const volta = await importarPedidoJSON(exp);
+    ok(JSON.parse(exp).formato === 'apoio-escrita-patentes-pedido' && volta.titulo === p.titulo && volta.reivindicacoes.length === p.reivindicacoes.length && volta.busca.registroColado.length === p.busca.registroColado.length && volta.universidade.inventores.length === p.universidade.inventores.length, 'exporta e reimporta o pedido em JSON sem perder nada');
+    ok(nomePeloTitulo(p, 'json') === 'Sistema de monitoramento de pressão para circuitos pneumáticos.json', 'o arquivo leva o título da patente');
+    let recusou = false; try { await importarPedidoJSON(RETORNO_EXEMPLO); } catch (e) { recusou = /busca/.test(e.message); }
+    ok(recusou, 'avisa quando abrem o JSON da busca no lugar do pedido');
+    ok((await importarPedidoJSON(JSON.stringify(p))).titulo === p.titulo, 'abre também o pedido.json antigo (sem envelope)');
     for (const d of DOCUMENTOS) {
         const b = await gerarDocumento(p, d.id);
         const z = await JSZip.loadAsync(b);

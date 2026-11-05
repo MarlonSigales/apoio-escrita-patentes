@@ -8,8 +8,8 @@
     <meta name="description" content="Escreva seu pedido de patente passo a passo (Guia Básico do INPI), com buscas de anterioridade, classificação por aproximação, caderno de fontes e os 8 documentos prontos para a universidade e o INPI.">
     <link rel="icon" type="image/png" href="img/icone-instagri.png">
     <link rel="apple-touch-icon" href="img/icone-instagri-180.png">
-    <link rel="stylesheet" href="css/style.css?v=20261104e">
-    <link rel="stylesheet" href="css/patentes.css?v=20261104e">
+    <link rel="stylesheet" href="css/style.css?v=20261104f">
+    <link rel="stylesheet" href="css/patentes.css?v=20261104f">
 </head>
 <body>
     <header class="topbar">
@@ -30,11 +30,13 @@
             <nav id="sidebar-nav" aria-label="Etapas do pedido"></nav>
             <div class="sidebar-arquivo">
                 <span class="sidebar-arquivo-rotulo">Arquivo do pedido</span>
-                <button type="button" class="sidebar-arquivo-btn" data-acao="baixar-tudo">⬇ Baixar ZIP (8 documentos)</button>
+                <button type="button" class="sidebar-arquivo-btn" data-acao="exportar-json" title="Salva o pedido inteiro num arquivo com o nome do título">💾 Exportar pedido (.json)</button>
+                <button type="button" class="sidebar-arquivo-link" data-acao="abrir">📂 Continuar um pedido (.json)</button>
+                <button type="button" class="sidebar-arquivo-link" data-acao="baixar-tudo">⬇ Baixar ZIP (8 documentos)</button>
                 <details class="sidebar-arquivo-mais">
                     <summary>Mais opções</summary>
                     <div>
-                        <button type="button" class="sidebar-arquivo-link" data-acao="abrir">📂 Abrir pedido (.zip ou .json)</button>
+                        <button type="button" class="sidebar-arquivo-link" data-acao="abrir">📂 Abrir ZIP baixado antes</button>
                         <button type="button" class="sidebar-arquivo-link" data-acao="importar-md">⇪ Importar prompt de busca (.md)</button>
                         <button type="button" class="sidebar-arquivo-link" data-acao="importar-docx">📄 Importar pedido em Word (.docx)</button>
                         <button type="button" class="sidebar-arquivo-link" data-acao="exemplo" data-ex="pressao">🧪 Exemplo completo</button>
@@ -74,16 +76,16 @@
     <input type="file" id="arq" hidden>
 
     <script src="lib/jszip.min.js"></script>
-    <script src="js/dados.js?v=20261104e"></script>
-    <script src="js/ipc.js?v=20261104e"></script>
-    <script src="js/buscas.js?v=20261104e"></script>
-    <script src="js/fontes.js?v=20261104e"></script>
-    <script src="js/redacao.js?v=20261104e"></script>
-    <script src="js/preenche.js?v=20261104e"></script>
-    <script src="js/documentos.js?v=20261104e"></script>
-    <script src="js/jogo.js?v=20261104e"></script>
-    <script src="js/exemplo.js?v=20261104e"></script>
-    <script src="js/etapas.js?v=20261104e"></script>
-    <script src="js/app.js?v=20261104e"></script>
+    <script src="js/dados.js?v=20261104f"></script>
+    <script src="js/ipc.js?v=20261104f"></script>
+    <script src="js/buscas.js?v=20261104f"></script>
+    <script src="js/fontes.js?v=20261104f"></script>
+    <script src="js/redacao.js?v=20261104f"></script>
+    <script src="js/preenche.js?v=20261104f"></script>
+    <script src="js/documentos.js?v=20261104f"></script>
+    <script src="js/jogo.js?v=20261104f"></script>
+    <script src="js/exemplo.js?v=20261104f"></script>
+    <script src="js/etapas.js?v=20261104f"></script>
+    <script src="js/app.js?v=20261104f"></script>
 </body>
 </html>

@@ -329,25 +329,51 @@ function nomeArquivoDoc(p, d) { return semAcento(d.nome).replace(/[^a-z0-9. -]/g
 /** ZIP final: os 8 documentos + o projeto (.json) + o prompt de busca (.md). */
 async function zipFinal(p) {
     const z = new JSZip();
-    const pasta = z.folder(nomeSeguro(p.titulo));
+    const pasta = z.folder(nomePeloTitulo(p, 'x').replace(/\.x$/, ''));
     for (const d of DOCUMENTOS) pasta.file((d.grupo === 'INPI' ? 'INPI/' : d.grupo === 'Universidade' ? 'Universidade/' : '') + nomeArquivoDoc(p, d), await gerarDocumento(p, d.id));
-    const copia = JSON.parse(JSON.stringify(p));
-    const imgs = pasta.folder('imagens');
-    for (const d of p.desenhos) { const b = await Imagens.ler(d.img); if (b) imgs.file(d.img + '.' + (/png/.test(b.type) ? 'png' : 'jpg'), b); }
-    pasta.file('pedido.json', JSON.stringify(copia, null, 1));
+    pasta.file(nomePeloTitulo(p, 'json'), await exportarPedidoJSON(p));
     pasta.file('prompt-busca-anterioridade.md', gerarMD(p));
-    pasta.file('LEIA-ME.txt', `Pedido: ${tituloPedido(p)}\nGerado em ${dataBR(hojeISO())} pelo Apoio à Escrita de Patentes.\n\nINPI/: os 4 documentos do pedido (anexar no peticionamento como DOCX ou PDF).\nUniversidade/: memorando, formulário de informação tecnológica e formulário de busca (anexar no processo sigiloso do SEI).\n8. Relatório da busca: registro e documentos encontrados.\npedido.json + imagens/: abra no app ("Abrir projeto") para continuar.\n\nATENÇÃO: este arquivo tem dados pessoais dos inventores (CPF, endereço). Não publique nem envie por canais abertos.`);
+    pasta.file('LEIA-ME.txt', `Pedido: ${tituloPedido(p)}\nGerado em ${dataBR(hojeISO())} pelo Apoio à Escrita de Patentes.\n\nINPI/: os 4 documentos do pedido (anexar no peticionamento como DOCX ou PDF).\nUniversidade/: memorando, formulário de informação tecnológica e formulário de busca (anexar no processo sigiloso do SEI).\n8. Relatório da busca: registro e documentos encontrados.\n${nomePeloTitulo(p, 'json')}: o pedido completo (com as figuras). Abra no app em "Continuar um pedido (.json)" para seguir o trabalho.\n\nATENÇÃO: este arquivo tem dados pessoais dos inventores (CPF, endereço). Não publique nem envie por canais abertos.`);
     return z.generateAsync({ type: 'blob' });
+}
+
+// ------------------------------------------------------------ pedido em JSON (exportar e reimportar para continuar)
+const FORMATO_PEDIDO = 'apoio-escrita-patentes-pedido';
+
+/** Nome do arquivo = título da patente (sem caracteres proibidos em nomes de arquivo). */
+function nomePeloTitulo(p, ext) {
+    const t = String(p.titulo || 'pedido sem título').replace(/[\\/:*?"<>|\u0000-\u001f]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 120) || 'pedido';
+    return t + '.' + ext;
+}
+function blobParaDataUrl(b) { return new Promise(ok => { const fr = new FileReader(); fr.onload = () => ok(fr.result); fr.onerror = () => ok(''); fr.readAsDataURL(b); }); }
+async function dataUrlParaBlob(u) { return (await fetch(u)).blob(); }
+
+/** O pedido inteiro num único JSON, com as figuras embutidas (base64): basta esse arquivo para continuar. */
+async function exportarPedidoJSON(p) {
+    const copia = JSON.parse(JSON.stringify(p));
+    const figuras = {};
+    for (const d of p.desenhos) { const b = d.img && await Imagens.ler(d.img); if (b) figuras[d.img] = await blobParaDataUrl(b); }
+    return JSON.stringify({ formato: FORMATO_PEDIDO, versao: PE_VERSAO, exportadoEm: new Date().toISOString(), titulo: p.titulo, pedido: copia, figuras }, null, 1);
+}
+
+/** Lê o JSON exportado (ou um pedido.json antigo, sem o envelope) e restaura as figuras no navegador. */
+async function importarPedidoJSON(texto) {
+    const o = JSON.parse(texto);
+    if (o && o.formato && o.formato !== FORMATO_PEDIDO) {
+        if (o.formato === 'apoio-escrita-patentes-busca') throw new Error('este é o JSON do retorno da busca: importe-o na etapa "Buscas de anterioridade".');
+        throw new Error('este JSON não é um pedido deste app.');
+    }
+    const bruto = o && o.pedido ? o.pedido : o;
+    if (!bruto || typeof bruto !== 'object' || !('ficha' in bruto || 'titulo' in bruto || 'reivindicacoes' in bruto)) throw new Error('não encontrei os dados do pedido no arquivo.');
+    const p = normalizarPedido(bruto);
+    const figs = (o && o.figuras) || {};
+    for (const d of p.desenhos) if (d.img && figs[d.img]) await Imagens.guardar(await dataUrlParaBlob(figs[d.img]), d.img);
+    return p;
 }
 
 async function lerZipProjeto(arq) {
     const z = await JSZip.loadAsync(arq);
-    const j = Object.values(z.files).find(f => /pedido\.json$/.test(f.name));
-    if (!j) throw new Error('O ZIP não tem pedido.json.');
-    const p = normalizarPedido(JSON.parse(await j.async('string')));
-    for (const d of p.desenhos) {
-        const f = Object.values(z.files).find(x => x.name.includes('imagens/' + d.img + '.'));
-        if (f) await Imagens.guardar(new Blob([await f.async('uint8array')], { type: /png$/.test(f.name) ? 'image/png' : 'image/jpeg' }), d.img);
-    }
-    return p;
+    const jsons = Object.values(z.files).filter(f => /\.json$/i.test(f.name) && !f.dir);
+    for (const j of jsons) { try { return await importarPedidoJSON(await j.async('string')); } catch (e) { /* tenta o próximo */ } }
+    throw new Error('O ZIP não tem o JSON do pedido.');
 }

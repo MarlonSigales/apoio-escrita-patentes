@@ -71,10 +71,19 @@ local, com `python3 -m http.server`.
 
    Os documentos do INPI saem como os modelos da equipe: Arial 12, espaçamento 1,5, texto justificado, parágrafos numerados e "página / total" no cabeçalho.
 
+## Exportar e continuar depois
+
+- **💾 Exportar o pedido (.json)**, no Painel, no menu lateral ou na etapa final, baixa um arquivo com o **nome do título da patente**, por exemplo `Sistema de monitoramento de pressão para circuitos pneumáticos.json`.
+  Ele tem o pedido inteiro: ficha, resumo, reivindicações, buscas, relatório, inventores, formulários, progresso do jogo e as **figuras embutidas**.
+- **📂 Continuar um pedido (.json)** reimporta esse arquivo, restaura as figuras e abre na próxima missão pendente.
+  O app também aceita o ZIP dos 8 documentos, que leva o mesmo JSON, e o `pedido.json` de versões antigas.
+- O JSON do pedido (`"formato": "apoio-escrita-patentes-pedido"`) é diferente do JSON do retorno da busca (`"apoio-escrita-patentes-busca"`), que se importa na etapa de buscas.
+  O app avisa se um for aberto no lugar do outro.
+
 ## Dados e privacidade
 
 - Tudo fica **no navegador**: o texto no `localStorage` e as figuras no IndexedDB. Nada vai para um servidor.
-- O ZIP final leva os 8 documentos, o `pedido.json`, as imagens e o prompt `.md`. Para continuar o pedido, abra o ZIP em "Abrir pedido".
+- O ZIP final leva os 8 documentos, o pedido em JSON (com o nome do título) e o prompt `.md`.
 - O CPF, o endereço e o telefone dos inventores entram só nos formulários da universidade. **Não publique o ZIP** nem cole esses dados numa IA.
 - "Começar do zero" (no Painel ou em Mais opções) apaga o pedido, as fontes e as figuras deste navegador.
 - O exemplo é o sistema de monitoramento de pressão para circuitos pneumáticos, com o retorno da busca colado do formulário. Os inventores do exemplo são fictícios.
