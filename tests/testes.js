@@ -126,6 +126,8 @@ function ok(cond, nome) { RES.push([!!cond, nome]); }
       const c = [lg.x1, lg.y1].join();
       d.elementos.splice(1, 1); atualizarLigacoes(d);
       ok(a === '220,120,400,130' && b === '600,180' && c === '160,180' && !lg.con2 && lg.x2 === 600, `ligação acompanha o símbolo (move, gira e solta ao apagar): ${a} | ${b} | ${c}`); }
+    { const x = parXml(T('1.\tSistema de monitoramento, caracterizado por compreender um sensor (01); e caracterizada pelo fato de que gira.'));
+      ok((x.match(/<w:b\/>/g) || []).length === 2 && /<w:b\/>[^]*?caracterizado por<\/w:t>/.test(x) && /<w:b\/>[^]*?caracterizada pelo fato de que<\/w:t>/.test(x) && !/<w:b\/>[^<]*<w:sz[^>]*>[^]*?compreender/.test(x.split('caracterizado por')[1].split('caracterizada')[0]), '"caracterizado por" em negrito no .docx'); }
     for (const d of DOCUMENTOS) {
         const b = await gerarDocumento(p, d.id);
         const z = await JSZip.loadAsync(b);

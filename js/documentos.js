@@ -20,11 +20,16 @@ function runXml(r, base = {}) {
     const props = `<w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/>${o.b ? '<w:b/>' : ''}${o.i ? '<w:i/>' : ''}${o.u ? '<w:u w:val="single"/>' : ''}<w:sz w:val="${(o.tam || 12) * 2}"/><w:szCs w:val="${(o.tam || 12) * 2}"/></w:rPr>`;
     return String(o.texto ?? '').split('\n').map((linha, i) => (i ? `<w:r>${props}<w:br/></w:r>` : '') + `<w:r>${props}<w:t xml:space="preserve">${xe(linha)}</w:t></w:r>`).join('');
 }
+/** "caracterizado por" (e variações) sai sempre em negrito nos documentos. */
+const RX_CARACTERIZADO = /(caracterizad[oa]s?\s+(?:pelo\s+fato\s+de(?:\s+que)?|pel[oa]s?|por))/gi;
+function runsCaracterizado(texto) {
+    return String(texto ?? '').split(RX_CARACTERIZADO).filter((x, i) => x !== '' || i === 0).map((x, i) => i % 2 ? { texto: x, b: true } : { texto: x });
+}
 function parXml(b) {
     const al = { c: 'center', j: 'both', e: 'left', d: 'right' }[b.al || 'j'];
     const esp = b.simples ? '<w:spacing w:before="0" w:after="60" w:line="276" w:lineRule="auto"/>' : `<w:spacing w:before="0" w:after="${b.depois ?? 120}" w:line="360" w:lineRule="auto"/>`;
     const rec = b.recuo ? `<w:ind w:left="${b.recuo}" w:hanging="${b.pendente || 0}"/>` : (b.primeira ? `<w:ind w:firstLine="${b.primeira}"/>` : '');
-    const runs = b.runs ? b.runs.map(r => runXml(r, b)).join('') : runXml({ texto: b.texto }, b);
+    const runs = b.runs ? b.runs.map(r => runXml(r, b)).join('') : b.b ? runXml({ texto: b.texto }, b) : runsCaracterizado(b.texto).map(r => runXml(r, b)).join('');
     return `<w:p><w:pPr><w:jc w:val="${al}"/>${esp}${rec}${b.manter ? '<w:keepNext/>' : ''}</w:pPr>${runs}</w:p>`;
 }
 function tabXml(b, largura) {

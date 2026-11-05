@@ -71,7 +71,7 @@ local, com `python3 -m http.server`.
    | 7 | Formulário de Busca de Anterioridade (contagens por base e documentos relevantes) | Universidade |
    | 8 | Relatório da busca de anterioridade (registro, documentos, quadro comparativo, prazos) | Equipe / NIT |
 
-   Os documentos do INPI saem como os modelos da equipe: Arial 12, espaçamento 1,5, texto justificado, parágrafos numerados e "página / total" no cabeçalho.
+   Os documentos do INPI saem como os modelos da equipe: Arial 12, espaçamento 1,5, texto justificado, parágrafos numerados e "página / total" no cabeçalho; "caracterizado por" (e "caracterizada por", "caracterizado pelo fato de") sai sempre em negrito.
 
 ## Desenhos, inventores e relatório
 
