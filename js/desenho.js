@@ -81,22 +81,47 @@ function svgSimbolo(p, d, e) {
     return s;
 }
 
-/** Pontos onde as ligações encaixam: meio das laterais dos símbolos e pontas das outras ligações. */
+/**
+ * Terminal k do símbolo (0 esquerda, 1 direita, 2 em cima, 3 embaixo, 4 centro), medido no desenho ORIGINAL do símbolo
+ * e levado para a figura com o giro e o espelho. Assim o fio continua no mesmo terminal quando o símbolo gira.
+ */
+function terminalSimbolo(e, k) {
+    const rot = ((Number(e.rot) || 0) % 360 + 360) % 360, w = Math.abs(e.w), h = Math.abs(e.h);
+    const [lw, lh] = rot % 180 ? [h, w] : [w, h];
+    let [lx, ly] = [[0, lh / 2], [lw, lh / 2], [lw / 2, 0], [lw / 2, lh], [lw / 2, lh / 2]][k] || [lw / 2, lh / 2];
+    lx -= lw / 2; ly -= lh / 2; if (e.esp) lx = -lx;
+    const a = rot * Math.PI / 180, c = Math.round(Math.cos(a)), s = Math.round(Math.sin(a));
+    return [Math.round((e.x + w / 2 + lx * c - ly * s) * 10) / 10, Math.round((e.y + h / 2 + lx * s + ly * c) * 10) / 10];
+}
+/** Pontos onde as ligações encaixam: terminais dos símbolos (com o elemento e o terminal) e pontas das outras ligações. */
 function terminaisFigura(d, exceto) {
     const t = [];
     for (const e of d.elementos || []) {
         if (e === exceto) continue;
-        if (e.t === 'sim') { const w = Math.abs(e.w), h = Math.abs(e.h), cx = e.x + w / 2, cy = e.y + h / 2; t.push([e.x, cy], [e.x + w, cy], [cx, e.y], [cx, e.y + h]); if (w < 30 && h < 30) t.push([cx, cy]); }
-        else if (e.t === 'ligacao' || e.t === 'linha') t.push([e.x1, e.y1], [e.x2, e.y2]);
+        if (e.t === 'sim') { const ks = Math.abs(e.w) < 30 && Math.abs(e.h) < 30 ? [4, 0, 1, 2, 3] : [0, 1, 2, 3]; for (const k of ks) t.push([...terminalSimbolo(e, k), e.id, k]); }
+        else if (e.t === 'ligacao' || e.t === 'linha') t.push([e.x1, e.y1, null, null], [e.x2, e.y2, null, null]);
     }
     return t;
 }
 function encaixar(d, p, exceto) {
     const tol = Math.max(10, d.w / 70);
     let melhor = null, dm = tol;
-    for (const [x, y] of terminaisFigura(d, exceto)) { const k = Math.hypot(x - p.x, y - p.y); if (k < dm) { dm = k; melhor = { x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10 }; } }
+    for (const [x, y, el, k] of terminaisFigura(d, exceto)) { const dd = Math.hypot(x - p.x, y - p.y); if (dd < dm) { dm = dd; melhor = { x, y, el, k }; } }
     return melhor;
 }
+/** As ligações presas a um símbolo acompanham o símbolo quando ele é movido, redimensionado, girado ou espelhado. */
+function atualizarLigacoes(d) {
+    for (const e of d.elementos || []) {
+        if (e.t !== 'ligacao' && e.t !== 'linha') continue;
+        for (const [ponta, cx, cy] of [['con1', 'x1', 'y1'], ['con2', 'x2', 'y2']]) {
+            const c = e[ponta]; if (!c) continue;
+            const s = d.elementos.find(x => x.id === c.el && x.t === 'sim');
+            if (!s) { delete e[ponta]; continue; }          // o símbolo foi apagado: a ponta fica solta onde estava
+            [e[cx], e[cy]] = terminalSimbolo(s, c.k);
+        }
+    }
+}
+function prender(e, ponta, q) { if (q && q.el) e[ponta] = { el: q.el, k: q.k }; else delete e[ponta]; }
 
 function normalizarFigura(d) {
     d.w = Number(d.w) || FIG_PADRAO.w; d.h = Number(d.h) || FIG_PADRAO.h;
@@ -176,6 +201,7 @@ function svgElemento(p, d, e, comAlcas) {
 }
 
 function svgFigura(p, d, urlFundo, comAlcas) {
+    atualizarLigacoes(d);
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${d.w} ${d.h}" width="${d.w}" height="${d.h}" class="fig-svg" data-fig="${d.id}">` +
         `<rect x="0" y="0" width="${d.w}" height="${d.h}" fill="#fff"/>` +
         (comAlcas && Ed.grade[d.id] !== false ? `<defs><pattern id="grade-${d.id}" width="${passoGrade(d) * 2}" height="${passoGrade(d) * 2}" patternUnits="userSpaceOnUse"><circle cx="0.8" cy="0.8" r="0.8" fill="#c9d6d2"/></pattern></defs><rect x="0" y="0" width="${d.w}" height="${d.h}" fill="url(#grade-${d.id})" pointer-events="none"/>` : '') +
@@ -187,6 +213,7 @@ function svgFigura(p, d, urlFundo, comAlcas) {
 function redesenharJa(id) {
     const d = figura(id), alvo = document.querySelector(`.fig-tela[data-fig="${id}"]`);
     if (!d || !alvo) return;
+    atualizarLigacoes(d);
     const novo = svgFigura(App.p, d, Ed.url[id] || '', true);
     const svg = alvo.querySelector('svg.fig-svg');
     if (svg && svg.getAttribute('viewBox') === `0 0 ${d.w} ${d.h}`) svg.innerHTML = novo.replace(/^<svg[^>]*>|<\/svg>$/g, '');
@@ -253,6 +280,7 @@ document.addEventListener('pointerdown', ev => {
     } else if (tool === 'ligacao') {
         const q = encaixar(d, p0) || p0;
         e = Object.assign({ id: uid(), t: 'ligacao', x1: q.x, y1: q.y, x2: q.x + 1, y2: q.y }, ligPadrao(id));
+        prender(e, 'con1', q);
     }
     else if (tool === 'linha') e = { id: uid(), t: 'linha', x1: p0.x, y1: p0.y, x2: p0.x + 1, y2: p0.y + 1 };
     else if (tool === 'seta') {
@@ -271,7 +299,12 @@ document.addEventListener('pointerdown', ev => {
 document.addEventListener('pointermove', ev => {
     const g = Ed.drag; if (!g) return;
     let p = pontoSVG(g.svg, ev);
-    if ((e0 => e0.t === 'ligacao' || e0.t === 'linha')(g.e) && ['novo', '1', '2'].includes(g.modo)) p = encaixar(figura(g.id), p, g.e) || p;
+    if ((g.e.t === 'ligacao' || g.e.t === 'linha') && ['novo', '1', '2'].includes(g.modo)) {
+        const q = encaixar(figura(g.id), p, g.e);
+        prender(g.e, g.modo === '1' ? 'con1' : 'con2', q);      // solta a ponta se ela sair do terminal
+        if (q) p = { x: q.x, y: q.y };
+    }
+    if ((g.e.t === 'ligacao' || g.e.t === 'linha') && g.modo === 'mover') { delete g.e.con1; delete g.e.con2; }   // arrastar a ligação inteira a solta
     const dx = p.x - g.p0.x, dy = p.y - g.p0.y, e = g.e, o = g.orig;
     if (g.modo === 'novo') {
         if (ehCaixa(e)) { e.w = dx; e.h = dy; } else { e.x2 = p.x; e.y2 = p.y; }
@@ -322,7 +355,7 @@ function duplicarSelecionado(id) {
     const d = figura(id), e = d && d.elementos.find(x => x.id === Ed.sel[id]); if (!e) return;
     guardarDesfazer(d);
     const c = JSON.parse(JSON.stringify(e)), o = passoGrade(d) * 3;
-    c.id = uid(); if ('x1' in c) { c.x1 += o; c.y1 += o; c.x2 += o; c.y2 += o; } else { c.x += o; c.y += o; }
+    c.id = uid(); delete c.con1; delete c.con2; if ('x1' in c) { c.x1 += o; c.y1 += o; c.x2 += o; c.y2 += o; } else { c.x += o; c.y += o; }
     d.elementos.push(c); Ed.sel[id] = c.id; redesenhar(id); terminouMudanca(d);
 }
 /** Gira 90° o elemento selecionado (símbolo: na própria caixa; traços: em torno do meio). */

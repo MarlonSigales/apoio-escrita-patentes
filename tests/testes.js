@@ -116,6 +116,16 @@ function ok(cond, nome) { RES.push([!!cond, nome]); }
       ok(!ruins.length && Object.keys(SIMBOLOS).length >= 60, Object.keys(SIMBOLOS).length + ' símbolos desenham sem erro' + (ruins.length ? ': ' + ruins : ''));
       const lig = ESTILOS_LIGACAO.every(([es]) => COTOVELOS.every(([c]) => { const s = svgLigacao(d, { x1: 0, y1: 0, x2: 300, y2: 200, estilo: es, cotovelo: c, fim: 'seta', ini: 'ponto' }); return s && !/NaN|undefined/.test(s); }));
       ok(lig, 'ligações em todos os estilos e cotovelos'); }
+    { const d = { id: 'g', w: 1000, h: 600, elementos: [{ id: 'r', t: 'sim', forma: 'el-resistor', x: 100, y: 100, w: 120, h: 40, rot: 0 }, { id: 'c', t: 'sim', forma: 'el-capacitor', x: 400, y: 100, w: 100, h: 60, rot: 0 }] };
+      const lg = { id: 'l', t: 'ligacao', x1: 0, y1: 0, x2: 0, y2: 0, estilo: 'cheia', fim: 'nenhuma', ini: 'nenhuma', cotovelo: 'reto', con1: { el: 'r', k: 1 }, con2: { el: 'c', k: 0 } };
+      d.elementos.push(lg); atualizarLigacoes(d);
+      const a = [lg.x1, lg.y1, lg.x2, lg.y2].join();
+      d.elementos[1].x += 200; d.elementos[1].y += 50; atualizarLigacoes(d);
+      const b = [lg.x2, lg.y2].join();
+      d.elementos[0].rot = 90; [d.elementos[0].w, d.elementos[0].h] = [40, 120]; d.elementos[0].x = 140; d.elementos[0].y = 60; atualizarLigacoes(d);
+      const c = [lg.x1, lg.y1].join();
+      d.elementos.splice(1, 1); atualizarLigacoes(d);
+      ok(a === '220,120,400,130' && b === '600,180' && c === '160,180' && !lg.con2 && lg.x2 === 600, `ligação acompanha o símbolo (move, gira e solta ao apagar): ${a} | ${b} | ${c}`); }
     for (const d of DOCUMENTOS) {
         const b = await gerarDocumento(p, d.id);
         const z = await JSZip.loadAsync(b);
