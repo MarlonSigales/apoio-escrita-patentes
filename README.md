@@ -32,6 +32,7 @@ local, com `python3 -m http.server`.
       Daí saem as contagens por base, os documentos com relevância e link, a conclusão e se houve anterioridades.
       Tudo isso vai direto para o **Formulário de Busca de Anterioridade**.
       **Já tem a busca num PDF?** O botão "Pedido para converter um PDF de busca em JSON" copia um pedido para colar numa IA junto com o PDF (`docs/pedido-converter-pdf-busca-em-json.md`). A IA não refaz a busca: só transcreve o relatório para o mesmo JSON, usando as características C1…Cn do seu pedido.
+      **Sem documentos repetidos:** se o número já está na lista, o app não cria outra entrada, mesmo que o documento venha de outra base (Google Patents, Espacenet, PATENTSCOPE…) ou esteja escrito de outro jeito (com espaços, pontos, dígito verificador ou outro código de tipo, como U2/Y1). As informações novas completam a entrada existente, e as bases ficam somadas nela. Isso vale ao importar o retorno, ao registrar um documento numa busca manual e ao digitar o número na tabela.
    4. Documentos e quadro comparativo, com as características tiradas das reivindicações.
    5. Buscas à mão, só para o que faltar.
 

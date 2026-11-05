@@ -31,6 +31,8 @@ Atualizado em 04/11/2026 (versão 2).
 10 [resolvido 04/11/2026] Editor de desenhos (células, setas numeradas, textos traduzíveis) antes do relatório; inventores
    sincronizados com a ficha e JSON de inventores; pedido de melhoria do relatório com IA; pedido para converter PDF de
    busca em JSON; "Entenda: PI ou MU" incorporado à aba "Sua invenção" (escolha num só lugar).
+11 [resolvido 04/11/2026] Documento com número já registrado não ganha nova entrada na busca (mesmo vindo de outra base
+   ou com outra grafia/código de tipo): as informações e as bases são juntadas na entrada existente.
 2 [futuro] Ampliar o catálogo IPC/CPC (hoje ~80 classes, foco em agro, eletrônica e controle).
 3 [futuro] Ler PDF direto como fonte (hoje: copiar e colar o texto).
 4 [futuro] Nuvem da equipe (MEGA), como no Projeto Conceitual, com senha e dados resguardados.

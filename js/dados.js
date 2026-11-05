@@ -115,7 +115,61 @@ function normalizarPedido(p) {
     p.universidade.colaboradores = (p.universidade.colaboradores || []).map(i => Object.assign(inventorVazio(), { inventor: false }, i));
     if (!Array.isArray(p.universidade.areasAbrangidas)) p.universidade.areasAbrangidas = [];
     p.busca.registroColado = (p.busca.registroColado || []).map(r => Object.assign({ id: uid(), base: '', consulta: '', n: '', triados: '' }, r));
+    p.busca.resultados = deduplicarResultados(p.busca.resultados);
     return p;
+}
+
+// ------------------------------------------------------------ documentos da busca sem repetição
+/**
+ * Chaves de identidade de um número de documento. Ignora espaços, pontos e barras, o código de tipo (A1, B1, U2, Y1…)
+ * e o dígito verificador brasileiro. Assim "BR 10 2016 023064-0 B1", "BR102016023064B1" e "BR102016023064A2" são
+ * o mesmo pedido, e "BR202022000099U2 / Y1" ou "AR045253 / AR040943" geram uma chave para cada número.
+ */
+function chavesDoc(num) {
+    const s = String(num || '').toUpperCase();
+    const chaves = new Set();
+    for (const parte of s.split(/\s*;\s*|\s+\/\s+|\s*,\s*(?=[A-Z]{2})|\s+E\s+|[()]/)) {
+        let t = parte.replace(/^(PI|MU|C1)\s*(?=\d)/, 'BR$1').replace(/[^A-Z0-9]/g, '');
+        if (!/\d{4}/.test(t)) continue;
+        t = t.replace(/^BR(PI|MU|C1)(?=\d)/, 'BR');
+        const m = t.match(/^([A-Z]{2})(\d+)([A-Z]\d?)?$/);
+        if (!m) { chaves.add(t); continue; }
+        let [, pais, dig] = m;
+        if (pais === 'BR') {
+            if (dig.length === 13) dig = dig.slice(0, 12);          // BR 10 2024 016346 0 → sem o dígito verificador
+            else if (dig.length === 8) dig = dig.slice(0, 7);       // PI 0103912-1, MU 8401135-0
+        }
+        chaves.add(pais + dig.replace(/^0+(?=\d{6})/, ''));
+    }
+    return [...chaves];
+}
+
+function mesmoDocumento(a, b) {
+    const ka = chavesDoc(a), kb = new Set(chavesDoc(b));
+    if (!ka.length || !kb.size) { const n = x => String(x || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); return !!n(a) && n(a) === n(b); }   // referência sem número (artigo, tese)
+    return ka.some(k => kb.has(k));
+}
+
+/** Completa o documento já registrado com o que o novo traz (sem apagar nada). */
+function juntarDocumento(ja, x) {
+    for (const k of ['titulo', 'link', 'depositante', 'publicacao', 'prioridade', 'situacao', 'pais', 'base', 'nota']) if (!ja[k] && x[k]) ja[k] = x[k];
+    // o mesmo documento achado em outra base (Google Patents, Espacenet, PATENTSCOPE…): registra as duas bases numa entrada só
+    if (ja.base && x.base) { const bs = String(ja.base).split(/\s*,\s*/); if (!bs.some(b => b.toLowerCase() === String(x.base).toLowerCase())) ja.base = bs.concat(x.base).join(', '); }
+    for (const [c, v] of Object.entries(x.carac || {})) if (!ja.carac[c] || ja.carac[c] === '?') ja.carac[c] = v;
+    const ka = chavesDoc(ja.num); if (x.num && chavesDoc(x.num).some(k => !ka.includes(k)) && !/\//.test(ja.num)) ja.num = ja.num + ' / ' + x.num;
+    if (Number(x.relevancia) > Number(ja.relevancia)) ja.relevancia = x.relevancia;
+    return ja;
+}
+
+/** Remove documentos repetidos (mesmo número), juntando as informações no primeiro. */
+function deduplicarResultados(lista) {
+    const saida = [];
+    for (const r of lista || []) {
+        if (!r.carac) r.carac = {};
+        const ja = r.num ? saida.find(y => y.num && mesmoDocumento(y.num, r.num)) : null;
+        if (ja) juntarDocumento(ja, r); else saida.push(r);
+    }
+    return saida;
 }
 
 // ---------------------------------------------------------------- armazenamento

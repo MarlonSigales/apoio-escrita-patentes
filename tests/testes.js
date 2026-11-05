@@ -99,6 +99,12 @@ function ok(cond, nome) { RES.push([!!cond, nome]); }
     let rec2 = false; try { aplicarMelhoriaRelatorio(pm, 'texto sem json'); } catch (e) { rec2 = true; } ok(rec2, 'resposta sem o JSON é recusada');
     const cv = promptConverterBusca(p);
     ok(/Não refaça a busca/.test(cv) && /"formato": "apoio-escrita-patentes-busca"/.test(cv) && /\*\*C1:\*\*/.test(cv), 'pedido para converter PDF de busca em JSON');
+    ok(mesmoDocumento('BR 10 2016 023064-0 B1', 'BR102016023064A2') && mesmoDocumento('BR202022000099U2 / Y1', 'BR202022000099Y1') && mesmoDocumento('AR045253 / AR040943', 'AR040943') && mesmoDocumento('PI0103912-1', 'BR0103912A') && mesmoDocumento('BR 10 2024 016346 0', 'BR102024016346') && !mesmoDocumento('BR102016023064B1', 'BR102016023065B1'), 'mesmo número de documento em formatos diferentes');
+    { const q = normalizarPedido(pedidoVazio());
+      aplicarRetorno(q, JSON.stringify({ formato: 'apoio-escrita-patentes-busca', versao: 1, documentos: [{ numero: 'US11582898B2', base: 'google', titulo: 'Meters' }, { numero: 'US 11,582,898 B2', base: 'espacenet', link: 'https://worldwide.espacenet.com/x' }] }));
+      const a = aplicarRetorno(q, JSON.stringify({ formato: 'apoio-escrita-patentes-busca', versao: 1, documentos: [{ numero: 'US11582898', base: 'patentscope' }] }));
+      ok(q.busca.resultados.length === 1 && a.nrep === 1 && /Google Patents/.test(q.busca.resultados[0].base) && /Espacenet/.test(q.busca.resultados[0].base) && /PATENTSCOPE/i.test(q.busca.resultados[0].base), 'mesmo documento em bases diferentes vira uma entrada só: ' + q.busca.resultados[0].base);
+      q.busca.resultados.push({ num: 'US11582898B2', carac: {} }); ok(normalizarPedido(q).busca.resultados.length === 1, 'repetidos já salvos são juntados ao abrir'); }
     for (const d of DOCUMENTOS) {
         const b = await gerarDocumento(p, d.id);
         const z = await JSZip.loadAsync(b);

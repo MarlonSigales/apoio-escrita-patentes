@@ -154,6 +154,11 @@ document.addEventListener('change', e => {
         gravarCaminho(App.p, el.dataset.c, valorDe(el)); mudou();
     } else if (el.dataset.c && el.tagName === 'TEXTAREA' && /desenhos|busca\.termos|ficha\.componentes|resultados/.test(el.dataset.c)) {
         mudou();
+    } else if (el.dataset.c && /^busca\.resultados\.#[^.]+\.num$/.test(el.dataset.c)) {
+        const id = el.dataset.c.split('#')[1].split('.')[0], rs = App.p.busca.resultados, r = rs.find(x => x.id === id);
+        const ja = r && r.num && rs.find(x => x !== r && x.num && mesmoDocumento(x.num, r.num));
+        if (ja) { juntarDocumento(ja, r); rs.splice(rs.indexOf(r), 1); avisar(`O documento ${ja.num} já estava na lista: as informações foram juntadas nele, sem criar outra entrada.`, 'aviso', 6000); }
+        mudou();
     } else if (el.dataset.c && el.closest('.fig-celula')) {
         salvar(); atualizarPlacar();          // no editor de figuras não redesenha a página (não perde o clique na figura)
     } else if (el.dataset.c && /^universidade\.inventores\.#[^.]+\.nome$/.test(el.dataset.c)) {
@@ -233,7 +238,10 @@ const ACOES = {
             catch (e) { avisar(e.message, 'erro', 6000); }
         });
     },
-    'add-resultado'(el) { App.p.busca.resultados.push({ id: uid(), num: el.dataset.num || '', titulo: '', base: '', link: '', relevancia: 3, lido: 'resumo', nota: '', carac: {}, categoria: 'A', tipoDoc: 'Patente ou MU', publicacao: '' }); if (el.dataset.num) avisar('Registrado em Buscas → Documentos encontrados.'); mudou(); },
+    'add-resultado'(el) {
+        const ja = el.dataset.num && App.p.busca.resultados.find(r => r.num && mesmoDocumento(r.num, el.dataset.num));
+        if (ja) { avisar(`O documento ${ja.num} já está registrado na busca: não foi criada outra entrada.`, 'aviso', 5000); return; }
+        App.p.busca.resultados.push({ id: uid(), num: el.dataset.num || '', titulo: '', base: '', link: '', relevancia: 3, lido: 'resumo', nota: '', carac: {}, categoria: 'A', tipoDoc: 'Patente ou MU', publicacao: '' }); if (el.dataset.num) avisar('Registrado em Buscas → Documentos encontrados.'); mudou(); },
     'marcar-top'() { for (const s of sugerirClasses(App.p, 3)) if (!App.p.classes.marcadas.includes(s.codigo)) App.p.classes.marcadas.push(s.codigo); mudou(); },
     'preencher-termos'() { preencherTermos(App.p); mudou(); },
     'copiar'(el) { copiarTexto(el.dataset.texto); },
@@ -430,7 +438,7 @@ const ACOES = {
         if (!t.trim()) return avisar('Cole o retorno da busca no campo antes.', 'erro');
         const r = aplicarRetorno(App.p, t);
         autoPreencher(App.p);
-        avisar(`${r.json ? 'JSON' : 'Texto'} lido: ${r.nr} contagem(ns), ${r.nd} documento(s)${r.nota ? ' e a conclusão' : ''}. Já estão no Formulário de Busca de Anterioridade.`, r.nr || r.nd ? 'ok' : 'erro', 7000);
+        avisar(`${r.json ? 'JSON' : 'Texto'} lido: ${r.nr} contagem(ns), ${r.nd} documento(s) novo(s)${r.nrep ? `, ${r.nrep} já registrado(s) (juntado(s), sem duplicar)` : ''}${r.nota ? ' e a conclusão' : ''}. Já estão no Formulário de Busca de Anterioridade.`, r.nr || r.nd ? 'ok' : 'erro', 7000);
         mudou();
     },
     'arquivo-retorno': async () => {
@@ -438,7 +446,7 @@ const ACOES = {
         if (!a) return;
         const t = await a.text();
         const r = aplicarRetorno(App.p, t); autoPreencher(App.p);
-        avisar(`${r.json ? 'JSON' : 'Texto'} lido: ${r.nr} contagem(ns), ${r.nd} documento(s)${r.nota ? ' e a conclusão' : ''}.`, r.nr || r.nd ? 'ok' : 'erro', 7000);
+        avisar(`${r.json ? 'JSON' : 'Texto'} lido: ${r.nr} contagem(ns), ${r.nd} documento(s) novo(s)${r.nrep ? `, ${r.nrep} já registrado(s) (juntado(s), sem duplicar)` : ''}${r.nota ? ' e a conclusão' : ''}.`, r.nr || r.nd ? 'ok' : 'erro', 7000);
         mudou();
     },
     'limpar-retorno'() {

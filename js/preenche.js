@@ -333,11 +333,11 @@ function aplicarRetorno(p, texto) {
     const r = lerRetornoJSON(texto) || lerRetornoBusca(texto);
     const b = p.busca;
     b.retorno = (b.retorno ? b.retorno + '\n\n' : '') + texto;
-    let nr = 0, nd = 0;
+    let nr = 0, nd = 0, nrep = 0;
     for (const x of r.registro) if (!b.registroColado.some(y => y.base === x.base && y.consulta === x.consulta)) { b.registroColado.push(x); nr++; }
     for (const x of r.resultados) {
-        const ja = b.resultados.find(y => normNum(y.num) === normNum(x.num));
-        if (ja) { for (const k of ['titulo', 'link', 'depositante', 'publicacao', 'prioridade', 'situacao', 'pais']) if (!ja[k] && x[k]) ja[k] = x[k]; for (const [c, v] of Object.entries(x.carac || {})) if (!ja.carac[c] || ja.carac[c] === '?') ja.carac[c] = v; continue; }
+        const ja = x.num ? b.resultados.find(y => y.num && mesmoDocumento(y.num, x.num)) : null;
+        if (ja) { juntarDocumento(ja, Object.assign({ carac: {} }, x)); nrep++; continue; }
         const cat = x.categoria || 'A';   // X/Y só quando o retorno disser; o aluno ajusta
         b.resultados.push(Object.assign({ id: uid(), num: '', titulo: '', base: '', link: '', relevancia: 3, lido: 'resumo', nota: '', carac: {}, categoria: cat, tipoDoc: 'Patente ou MU', publicacao: '', depositante: '' }, x, { categoria: cat }));
         nd++;
@@ -348,5 +348,5 @@ function aplicarRetorno(p, texto) {
     // no caderno de fontes entra uma versão legível (o JSON cru não ajuda a pesquisar trechos)
     const legivel = r.json ? [r.nota, ...r.resultados.map(d => `${d.num} — ${d.titulo}. ${d.nota}`), ...(r.analise.diferenciais || []).map(x => 'Diferencial: ' + x), ...(r.analise.ameacas || []).map(x => 'Ameaça: ' + x)].filter(Boolean).join('\n') : texto;
     if (!p.fontes.some(f => f.nome === 'Retorno da busca de anterioridade')) p.fontes.push({ id: uid(), nome: 'Retorno da busca de anterioridade', tipo: r.json ? 'json' : 'texto', texto: legivel, data: hojeISO(), ativa: true });
-    return { nr, nd, nota: !!r.nota, json: !!r.json };
+    return { nr, nd, nrep, nota: !!r.nota, json: !!r.json };
 }
