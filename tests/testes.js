@@ -105,6 +105,17 @@ function ok(cond, nome) { RES.push([!!cond, nome]); }
       const a = aplicarRetorno(q, JSON.stringify({ formato: 'apoio-escrita-patentes-busca', versao: 1, documentos: [{ numero: 'US11582898', base: 'patentscope' }] }));
       ok(q.busca.resultados.length === 1 && a.nrep === 1 && /Google Patents/.test(q.busca.resultados[0].base) && /Espacenet/.test(q.busca.resultados[0].base) && /PATENTSCOPE/i.test(q.busca.resultados[0].base), 'mesmo documento em bases diferentes vira uma entrada só: ' + q.busca.resultados[0].base);
       q.busca.resultados.push({ num: 'US11582898B2', carac: {} }); ok(normalizarPedido(q).busca.resultados.length === 1, 'repetidos já salvos são juntados ao abrir'); }
+    { const q = normalizarPedido(pedidoVazio()); q.universidade.empresasOferta = 'Empresa X (contato: fulano)';
+      aplicarRetorno(q, JSON.stringify({ formato: 'apoio-escrita-patentes-busca', versao: 1, documentos: [{ numero: 'BR102020016318A2', depositante: 'Marchesan Implementos e Máquinas Agrícolas', relevancia: 3 }, { numero: 'BR102012012157B1', depositante: 'Universidade Federal de Pelotas', relevancia: 5 }, { numero: 'BR102016023064B1', depositante: 'José Roberto do Amaral Assy', relevancia: 5 }, { numero: 'US20150208573A1', depositante: 'Kinze Manufacturing', relevancia: 2 }] }));
+      const o = q.universidade.empresasOferta, m = q.universidade.empresasMercado;
+      ok(/Empresa X/.test(o) && /Marchesan.*BR102020016318A2/.test(o) && /Kinze/.test(o) && !/Universidade|Assy/.test(o) && /Marchesan/.test(m), 'empresas da busca vão para os formulários 2.4 e 2.5 como possíveis interessadas');
+      aplicarRetorno(q, JSON.stringify({ formato: 'apoio-escrita-patentes-busca', versao: 1, documentos: [{ numero: 'X1', depositante: 'Kinze Manufacturing' }] }));
+      ok((q.universidade.empresasOferta.match(/Kinze/g) || []).length === 1, 'empresa não se repete no formulário'); }
+    { const q = normalizarPedido(pedidoVazio()), d = { id: 'f', w: 1000, h: 600, elementos: [] };
+      const ruins = Object.keys(SIMBOLOS).filter(k => { const s = SIMBOLOS[k]; for (const rot of [0, 90]) { const svg = svgSimbolo(q, d, { t: 'sim', forma: k, x: 10, y: 10, w: s.w, h: s.h, rot, pt: s.txt }); if (!svg || /NaN|undefined/.test(svg)) return true; } return false; });
+      ok(!ruins.length && Object.keys(SIMBOLOS).length >= 60, Object.keys(SIMBOLOS).length + ' símbolos desenham sem erro' + (ruins.length ? ': ' + ruins : ''));
+      const lig = ESTILOS_LIGACAO.every(([es]) => COTOVELOS.every(([c]) => { const s = svgLigacao(d, { x1: 0, y1: 0, x2: 300, y2: 200, estilo: es, cotovelo: c, fim: 'seta', ini: 'ponto' }); return s && !/NaN|undefined/.test(s); }));
+      ok(lig, 'ligações em todos os estilos e cotovelos'); }
     for (const d of DOCUMENTOS) {
         const b = await gerarDocumento(p, d.id);
         const z = await JSZip.loadAsync(b);

@@ -16,9 +16,87 @@ const FIG_PADRAO = { w: 1000, h: 600 };
 const FIG_TOOLS = [
     ['sel', '🖐️', 'Selecionar e mover (arraste as pontas para girar a seta)'],
     ['seta', '➘', 'Seta numerada: arraste da peça até onde o número deve ficar'],
+    ['ligacao', '⤳', 'Ligação: fluxo, fio, tubulação ou sinal (estilo, pontas e cotovelo no painel). Encaixa nos terminais dos símbolos'],
     ['ret', '▭', 'Retângulo'], ['elipse', '◯', 'Elipse'], ['linha', '╱', 'Linha'], ['texto', 'T', 'Texto (traduzível)']
 ];
-const Ed = { tool: {}, num: {}, sel: {}, drag: null, desfazer: {}, url: {} };
+const Ed = { tool: {}, num: {}, sel: {}, drag: null, desfazer: {}, url: {}, forma: {}, grade: {}, lig: {} };
+const ehCaixa = e => e.t === 'ret' || e.t === 'elipse' || e.t === 'sim';
+const ehTraco = e => e.t === 'seta' || e.t === 'linha' || e.t === 'ligacao';
+function passoGrade(d) { return Math.max(5, Math.round(d.w / 100)); }
+function ligPadrao(id) { return Ed.lig[id] || (Ed.lig[id] = { estilo: 'cheia', ini: 'nenhuma', fim: 'seta', cotovelo: 'reto' }); }
+
+/** Pontos da ligação, conforme o cotovelo (reta, em L ou em Z). */
+function pontosLigacao(e) {
+    const { x1, y1, x2, y2 } = e, xm = (x1 + x2) / 2;
+    const pts = e.cotovelo === 'hv' ? [[x1, y1], [x2, y1], [x2, y2]] : e.cotovelo === 'vh' ? [[x1, y1], [x1, y2], [x2, y2]]
+        : e.cotovelo === 'hvh' ? [[x1, y1], [xm, y1], [xm, y2], [x2, y2]] : [[x1, y1], [x2, y2]];
+    return pts.filter((p, i) => !i || Math.hypot(p[0] - pts[i - 1][0], p[1] - pts[i - 1][1]) > 0.5);
+}
+function pontaLigacao(tipo, ponta, de, sw) {
+    const L = Math.hypot(ponta[0] - de[0], ponta[1] - de[1]) || 1, ux = (ponta[0] - de[0]) / L, uy = (ponta[1] - de[1]) / L;
+    const a = Math.max(10, sw * 5), b = a * .45, bx = ponta[0] - ux * a, by = ponta[1] - uy * a;
+    if (tipo === 'seta') return `<polygon fill="#000" stroke="none" points="${ponta[0]},${ponta[1]} ${bx - uy * b},${by + ux * b} ${bx + uy * b},${by - ux * b}"/>`;
+    if (tipo === 'aberta') return `<polyline fill="none" stroke="#000" stroke-width="${sw}" points="${bx - uy * b},${by + ux * b} ${ponta[0]},${ponta[1]} ${bx + uy * b},${by - ux * b}"/>`;
+    if (tipo === 'ponto') return `<circle fill="#000" cx="${ponta[0]}" cy="${ponta[1]}" r="${sw * 2.6}"/>`;
+    return '';
+}
+function svgLigacao(d, e) {
+    const pts = pontosLigacao(e); if (pts.length < 2) return '';
+    const base = Math.max(2, d.w / 400), sw = e.estilo === 'processo' ? base * 2.2 : base;
+    const tr = e.estilo === 'eletrico' ? ` stroke-dasharray="${sw * 5} ${sw * 3}"` : e.estilo === 'pontilhada' ? ` stroke-dasharray="${sw * .1} ${sw * 2.5}" stroke-linecap="round"` : '';
+    let s = `<polyline fill="none" stroke="#000" stroke-width="${sw}" stroke-linejoin="round"${tr} points="${pts.map(p => p.join(',')).join(' ')}"/>`;
+    if (e.estilo === 'pneumatico' || e.estilo === 'dados') {
+        const passo = Math.max(36, d.w / 26), m = passo * .22;
+        for (let i = 1; i < pts.length; i++) {
+            const [ax, ay] = pts[i - 1], [bx, by] = pts[i], L = Math.hypot(bx - ax, by - ay), ux = (bx - ax) / L, uy = (by - ay) / L;
+            for (let t = passo / 2; t < L - passo * .3; t += passo) {
+                const px = ax + ux * t, py = ay + uy * t;
+                if (e.estilo === 'dados') s += `<circle cx="${px}" cy="${py}" r="${m}" fill="#fff" stroke="#000" stroke-width="${sw}"/>`;
+                else for (const o of [-m * .7, m * .7]) { const qx = px + ux * o, qy = py + uy * o; s += `<line stroke="#000" stroke-width="${sw}" x1="${qx - uy * m * 1.6 + ux * m * .8}" y1="${qy + ux * m * 1.6 + uy * m * .8}" x2="${qx + uy * m * 1.6 - ux * m * .8}" y2="${qy - ux * m * 1.6 - uy * m * .8}"/>`; }
+            }
+        }
+    }
+    const n = pts.length;
+    return s + pontaLigacao(e.fim, pts[n - 1], pts[n - 2], base) + pontaLigacao(e.ini, pts[0], pts[1], base);
+}
+
+/** Símbolo da biblioteca, girado/espelhado na sua caixa, com o rótulo sempre na horizontal. */
+function svgSimbolo(p, d, e) {
+    const def = SIMBOLOS[e.forma]; if (!def) return '';
+    const rot = ((Number(e.rot) || 0) % 360 + 360) % 360, w = Math.abs(e.w), h = Math.abs(e.h);
+    const [lw, lh] = rot % 180 ? [h, w] : [w, h], cx = e.x + w / 2, cy = e.y + h / 2;
+    const sw = Math.max(2, d.w / 450), branco = def.g === 'fluxo' || def.g === 'blocos' || def.tag;
+    let s = `<g transform="translate(${cx} ${cy}) rotate(${rot})${e.esp ? ' scale(-1 1)' : ''} translate(${-lw / 2} ${-lh / 2})" stroke="#000" stroke-width="${sw}" fill="${branco ? '#fff' : 'none'}" stroke-linejoin="round" stroke-linecap="round">${def.d(lw, lh)}</g>`;
+    const txt = textoNoIdioma(p, e);
+    if (txt && def.r !== 'nenhum' || txt && e.pt) {
+        const linhas = def.tag && !txt.includes('|') ? txt.replace(/\s+/, '|').split('|') : txt.split('|');
+        const maior = Math.max(...linhas.map(l => l.length), 1);
+        const fs = Math.round(Number(e.tam) || (def.r === 'abaixo' || def.r === 'nenhum' ? Math.max(14, Math.min(d.w, d.h) * .03)
+            : Math.max(11, Math.min(h / (linhas.length + (def.tag ? 1.6 : .8)), w * (def.g === 'fluxo' && e.forma === 'fx-decisao' ? .62 : .86) / (maior * .56), Math.min(d.w, d.h) * .034))));
+        const gap = def.tag ? 1.4 : 1.1;
+        const y0 = def.r === 'abaixo' || def.r === 'nenhum' ? e.y + h + fs * .8 : cy - (linhas.length - 1) * fs * gap / 2;
+        const x0 = e.forma === 'bl-ganho' ? e.x + w * .38 : cx;
+        s += `<text x="${x0}" y="${y0}" font-family="Arial, Helvetica, sans-serif" font-size="${fs}" fill="#000" text-anchor="middle" dominant-baseline="middle">${linhas.map((l, i) => `<tspan x="${x0}" dy="${i ? fs * gap : 0}">${esc(l)}</tspan>`).join('')}</text>`;
+    }
+    return s;
+}
+
+/** Pontos onde as ligações encaixam: meio das laterais dos símbolos e pontas das outras ligações. */
+function terminaisFigura(d, exceto) {
+    const t = [];
+    for (const e of d.elementos || []) {
+        if (e === exceto) continue;
+        if (e.t === 'sim') { const w = Math.abs(e.w), h = Math.abs(e.h), cx = e.x + w / 2, cy = e.y + h / 2; t.push([e.x, cy], [e.x + w, cy], [cx, e.y], [cx, e.y + h]); if (w < 30 && h < 30) t.push([cx, cy]); }
+        else if (e.t === 'ligacao' || e.t === 'linha') t.push([e.x1, e.y1], [e.x2, e.y2]);
+    }
+    return t;
+}
+function encaixar(d, p, exceto) {
+    const tol = Math.max(10, d.w / 70);
+    let melhor = null, dm = tol;
+    for (const [x, y] of terminaisFigura(d, exceto)) { const k = Math.hypot(x - p.x, y - p.y); if (k < dm) { dm = k; melhor = { x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10 }; } }
+    return melhor;
+}
 
 function normalizarFigura(d) {
     d.w = Number(d.w) || FIG_PADRAO.w; d.h = Number(d.h) || FIG_PADRAO.h;
@@ -63,6 +141,8 @@ function svgElemento(p, d, e, comAlcas) {
     if (e.t === 'ret') s = `<rect x="${e.x}" y="${e.y}" width="${e.w}" height="${e.h}" ${traço}/>`;
     else if (e.t === 'elipse') s = `<ellipse cx="${e.x + e.w / 2}" cy="${e.y + e.h / 2}" rx="${Math.abs(e.w / 2)}" ry="${Math.abs(e.h / 2)}" ${traço}/>`;
     else if (e.t === 'linha') s = `<line x1="${e.x1}" y1="${e.y1}" x2="${e.x2}" y2="${e.y2}" ${traço}/>`;
+    else if (e.t === 'ligacao') s = svgLigacao(d, e);
+    else if (e.t === 'sim') s = svgSimbolo(p, d, e);
     else if (e.t === 'texto') {
         const fs = fonteTexto(d, e);
         s = `<text x="${e.x}" y="${e.y}" font-family="Arial, Helvetica, sans-serif" font-size="${fs}" fill="#000" dominant-baseline="middle" text-anchor="middle">${esc(textoNoIdioma(p, e) || 'Texto')}</text>`;
@@ -82,12 +162,13 @@ function svgElemento(p, d, e, comAlcas) {
     let alcas = '';
     const h = Math.max(7, d.w / 120);
     if (sel) {
-        if (e.t === 'seta' || e.t === 'linha') alcas = `<circle class="alca" data-alca="1" ${alvo} cx="${e.x1}" cy="${e.y1}" r="${h}"/><circle class="alca alca-giro" data-alca="2" ${alvo} cx="${e.x2}" cy="${e.y2}" r="${h}"/>`;
-        else if (e.t === 'ret' || e.t === 'elipse') alcas = `<rect class="selecao" x="${Math.min(e.x, e.x + e.w)}" y="${Math.min(e.y, e.y + e.h)}" width="${Math.abs(e.w)}" height="${Math.abs(e.h)}"/><circle class="alca" data-alca="br" ${alvo} cx="${e.x + e.w}" cy="${e.y + e.h}" r="${h}"/>`;
+        if (ehTraco(e)) alcas = `<circle class="alca" data-alca="1" ${alvo} cx="${e.x1}" cy="${e.y1}" r="${h}"/><circle class="alca alca-giro" data-alca="2" ${alvo} cx="${e.x2}" cy="${e.y2}" r="${h}"/>`;
+        else if (ehCaixa(e)) alcas = `<rect class="selecao" x="${Math.min(e.x, e.x + e.w)}" y="${Math.min(e.y, e.y + e.h)}" width="${Math.abs(e.w)}" height="${Math.abs(e.h)}"/><circle class="alca" data-alca="br" ${alvo} cx="${e.x + e.w}" cy="${e.y + e.h}" r="${h}"/>`;
         else if (e.t === 'texto') alcas = `<circle class="alca" data-alca="mv" ${alvo} cx="${e.x}" cy="${e.y + fonteTexto(d, e) * 0.9}" r="${h * 0.8}"/>`;
     }
     // área de clique mais larga que o traço
-    const zona = e.t === 'seta' || e.t === 'linha' ? `<line class="zona" ${alvo} x1="${e.x1}" y1="${e.y1}" x2="${e.x2}" y2="${e.y2}" stroke-width="${Math.max(18, d.w / 50)}"/>` +
+    const zona = e.t === 'ligacao' ? `<polyline class="zona" ${alvo} fill="none" points="${pontosLigacao(e).map(q => q.join(',')).join(' ')}" stroke-width="${Math.max(18, d.w / 50)}"/>`
+        : e.t === 'seta' || e.t === 'linha' ? `<line class="zona" ${alvo} x1="${e.x1}" y1="${e.y1}" x2="${e.x2}" y2="${e.y2}" stroke-width="${Math.max(18, d.w / 50)}"/>` +
         (e.t === 'seta' ? `<circle class="zona" ${alvo} cx="${e.x2 + (e.x2 - e.x1) / (Math.hypot(e.x2 - e.x1, e.y2 - e.y1) || 1) * fonteNum(d) * 0.85}" cy="${e.y2 + (e.y2 - e.y1) / (Math.hypot(e.x2 - e.x1, e.y2 - e.y1) || 1) * fonteNum(d) * 0.75}" r="${fonteNum(d) * 0.8}"/>` : '')
         : e.t === 'texto' ? `<rect class="zona" ${alvo} x="${e.x - fonteTexto(d, e) * 3}" y="${e.y - fonteTexto(d, e) * 0.7}" width="${fonteTexto(d, e) * 6}" height="${fonteTexto(d, e) * 1.4}"/>`
         : `<rect class="zona" ${alvo} x="${Math.min(e.x, e.x + e.w) - 6}" y="${Math.min(e.y, e.y + e.h) - 6}" width="${Math.abs(e.w) + 12}" height="${Math.abs(e.h) + 12}" fill="none" stroke-width="12"/>`;
@@ -97,6 +178,7 @@ function svgElemento(p, d, e, comAlcas) {
 function svgFigura(p, d, urlFundo, comAlcas) {
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${d.w} ${d.h}" width="${d.w}" height="${d.h}" class="fig-svg" data-fig="${d.id}">` +
         `<rect x="0" y="0" width="${d.w}" height="${d.h}" fill="#fff"/>` +
+        (comAlcas && Ed.grade[d.id] !== false ? `<defs><pattern id="grade-${d.id}" width="${passoGrade(d) * 2}" height="${passoGrade(d) * 2}" patternUnits="userSpaceOnUse"><circle cx="0.8" cy="0.8" r="0.8" fill="#c9d6d2"/></pattern></defs><rect x="0" y="0" width="${d.w}" height="${d.h}" fill="url(#grade-${d.id})" pointer-events="none"/>` : '') +
         (urlFundo ? `<image href="${urlFundo}" x="0" y="0" width="${d.w}" height="${d.h}" preserveAspectRatio="xMidYMid meet"/>` : '') +
         (d.elementos || []).map(e => svgElemento(p, d, e, comAlcas)).join('') + '</svg>';
 }
@@ -124,18 +206,24 @@ function atualizarPainel(id) {
     const e = (d.elementos || []).find(x => x.id === Ed.sel[id]);
     if (!e) { box.innerHTML = '<small>Clique num elemento para editar. Tecla Delete apaga; Ctrl+Z desfaz.</small>'; return; }
     const c = `desenhos.#${d.id}.elementos.#${e.id}.`;
-    const nomes = { seta: 'Seta numerada', ret: 'Retângulo', elipse: 'Elipse', linha: 'Linha', texto: 'Texto' };
+    const nomes = { seta: 'Seta numerada', ret: 'Retângulo', elipse: 'Elipse', linha: 'Linha', texto: 'Texto', ligacao: 'Ligação', sim: (SIMBOLOS[e.forma] || {}).n || 'Símbolo' };
+    const sel = (prop, opts, val) => `<select data-fig-prop="${prop}" data-fig="${d.id}">${opts.map(([v, t]) => `<option value="${v}" ${val === v ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select>`;
     let corpo = '';
     if (e.t === 'seta') corpo = `<label class="campo-inline">Número <select data-fig-num="${d.id}">${[...new Set([...numerosUsados(App.p), n2(e.num)])].sort().map(n => `<option ${n === n2(e.num) ? 'selected' : ''}>${n}</option>`).join('')}<option value="novo">novo (${n2(Math.max(0, ...numerosUsados(App.p).map(Number)) + 1)})</option></select></label><small>Setas com o mesmo número usam a mesma descrição.</small>`;
     if (e.t === 'texto') corpo = `<label>Português<input type="text" data-c="${c}pt" value="${escAttr(e.pt)}"></label><label>Inglês<input type="text" data-c="${c}en" value="${escAttr(e.en)}"></label><label>Espanhol<input type="text" data-c="${c}es" value="${escAttr(e.es)}"></label><label class="campo-inline">Tamanho <input type="number" min="8" max="200" data-c="${c}tam" value="${escAttr(e.tam || fonteTexto(d, e))}" style="width:5rem"></label>`;
-    box.innerHTML = `<b>${nomes[e.t]}</b> ${corpo}<button type="button" class="btn btn-danger btn-sm" data-acao="fig-apagar" data-fig="${d.id}">🗑 Apagar</button>`;
+    if (e.t === 'sim') corpo = `<label>Rótulo (português)<input type="text" data-c="${c}pt" value="${escAttr(e.pt)}"></label><label>Inglês<input type="text" data-c="${c}en" value="${escAttr(e.en)}"></label><label>Espanhol<input type="text" data-c="${c}es" value="${escAttr(e.es)}"></label><small>Use | para quebrar a linha (ex.: Ler|sensor).</small><label class="campo-inline">Tamanho do texto <input type="number" min="8" max="200" data-c="${c}tam" value="${escAttr(e.tam || '')}" placeholder="auto" style="width:5rem"></label>`;
+    if (e.t === 'ligacao') corpo = `<label>Estilo ${sel('estilo', ESTILOS_LIGACAO, e.estilo)}</label><label>Ponta no fim ${sel('fim', PONTAS_LIGACAO, e.fim)}</label><label>Ponta no início ${sel('ini', PONTAS_LIGACAO, e.ini)}</label><label>Traçado ${sel('cotovelo', COTOVELOS, e.cotovelo)}</label><small>As próximas ligações desta figura usam o mesmo estilo.</small>`;
+    const giro = e.t !== 'texto' ? `<button type="button" class="btn btn-secondary btn-sm" data-acao="fig-girar" data-fig="${d.id}" title="Girar 90°">⟳ 90°</button>` : '';
+    const esp = e.t === 'sim' ? `<button type="button" class="btn btn-secondary btn-sm" data-acao="fig-espelhar" data-fig="${d.id}" title="Espelhar na horizontal">⇋ Espelhar</button>` : '';
+    box.innerHTML = `<b>${esc(nomes[e.t])}</b> ${corpo}<div class="botoes">${giro}${esp}<button type="button" class="btn btn-secondary btn-sm" data-acao="fig-duplicar" data-fig="${d.id}" title="Duplicar (Ctrl+D)">⧉ Duplicar</button><button type="button" class="btn btn-danger btn-sm" data-acao="fig-apagar" data-fig="${d.id}">🗑 Apagar</button></div>`;
 }
 
 // ------------------------------------------------------------ interação (ponteiro)
 function pontoSVG(svg, ev) {
     const pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY;
     const m = svg.getScreenCTM(); if (!m) return { x: 0, y: 0 };
-    const r = pt.matrixTransform(m.inverse());
+    const r = pt.matrixTransform(m.inverse()), d = figura(svg.dataset.fig);
+    if (d && Ed.grade[d.id] !== false) { const g = passoGrade(d); return { x: Math.round(r.x / g) * g, y: Math.round(r.y / g) * g }; }
     return { x: Math.round(r.x), y: Math.round(r.y) };
 }
 function guardarDesfazer(d) { (Ed.desfazer[d.id] = Ed.desfazer[d.id] || []).push(JSON.stringify(d.elementos)); if (Ed.desfazer[d.id].length > 60) Ed.desfazer[d.id].shift(); }
@@ -158,6 +246,14 @@ document.addEventListener('pointerdown', ev => {
     guardarDesfazer(d);
     let e;
     if (tool === 'ret' || tool === 'elipse') e = { id: uid(), t: tool, x: p0.x, y: p0.y, w: 1, h: 1 };
+    else if (tool === 'sim') {
+        const forma = Ed.forma[id], def = SIMBOLOS[forma]; if (!def) return;
+        const tr = TXT_SIMBOLO[def.txt] || [];
+        e = { id: uid(), t: 'sim', forma, x: p0.x, y: p0.y, w: 1, h: 1, rot: 0, pt: def.txt, en: tr[0] || (def.txt && !TXT_SIMBOLO[def.txt] ? def.txt : ''), es: tr[1] || (def.txt && !TXT_SIMBOLO[def.txt] ? def.txt : '') };
+    } else if (tool === 'ligacao') {
+        const q = encaixar(d, p0) || p0;
+        e = Object.assign({ id: uid(), t: 'ligacao', x1: q.x, y1: q.y, x2: q.x + 1, y2: q.y }, ligPadrao(id));
+    }
     else if (tool === 'linha') e = { id: uid(), t: 'linha', x1: p0.x, y1: p0.y, x2: p0.x + 1, y2: p0.y + 1 };
     else if (tool === 'seta') {
         const num = garantirComponente(App.p, Ed.num[id] && Ed.num[id] !== 'auto' ? Ed.num[id] : proximoNumero(App.p, d));
@@ -174,9 +270,11 @@ document.addEventListener('pointerdown', ev => {
 });
 document.addEventListener('pointermove', ev => {
     const g = Ed.drag; if (!g) return;
-    const p = pontoSVG(g.svg, ev), dx = p.x - g.p0.x, dy = p.y - g.p0.y, e = g.e, o = g.orig;
+    let p = pontoSVG(g.svg, ev);
+    if ((e0 => e0.t === 'ligacao' || e0.t === 'linha')(g.e) && ['novo', '1', '2'].includes(g.modo)) p = encaixar(figura(g.id), p, g.e) || p;
+    const dx = p.x - g.p0.x, dy = p.y - g.p0.y, e = g.e, o = g.orig;
     if (g.modo === 'novo') {
-        if (e.t === 'ret' || e.t === 'elipse') { e.w = dx; e.h = dy; } else { e.x2 = p.x; e.y2 = p.y; }
+        if (ehCaixa(e)) { e.w = dx; e.h = dy; } else { e.x2 = p.x; e.y2 = p.y; }
     } else if (g.modo === 'mover') {
         if ('x1' in o) { e.x1 = o.x1 + dx; e.y1 = o.y1 + dy; e.x2 = o.x2 + dx; e.y2 = o.y2 + dy; } else { e.x = o.x + dx; e.y = o.y + dy; }
     } else if (g.modo === '1') { e.x1 = p.x; e.y1 = p.y; }
@@ -190,14 +288,16 @@ document.addEventListener('pointerup', () => {
     Ed.drag = null;
     const d = figura(g.id), e = g.e;
     if (g.modo === 'novo') {
-        const pequeno = (e.t === 'ret' || e.t === 'elipse') ? Math.abs(e.w) < 6 && Math.abs(e.h) < 6 : Math.hypot(e.x2 - e.x1, e.y2 - e.y1) < 8;
+        const pequeno = ehCaixa(e) ? Math.abs(e.w) < 6 && Math.abs(e.h) < 6 : Math.hypot(e.x2 - e.x1, e.y2 - e.y1) < 8;
         if (pequeno) {
             const k = Math.min(d.w, d.h);
-            if (e.t === 'ret' || e.t === 'elipse') { e.w = k * 0.2; e.h = k * 0.14; }
+            if (e.t === 'sim') { const def = SIMBOLOS[e.forma], f = k / 600; e.w = Math.round(def.w * f); e.h = Math.round(def.h * f); e.x = Math.round(e.x - e.w / 2); e.y = Math.round(e.y - e.h / 2); }
+            else if (e.t === 'ret' || e.t === 'elipse') { e.w = k * 0.2; e.h = k * 0.14; }
             else if (e.t === 'seta') { e.x2 = e.x1 + k * 0.12; e.y2 = e.y1 - k * 0.12; }     // clique simples: seta a 45°, número em cima à direita
             else { e.x2 = e.x1 + k * 0.2; e.y2 = e.y1; }
         }
         if (e.w < 0) { e.x += e.w; e.w = -e.w; } if (e.h < 0) { e.y += e.h; e.h = -e.h; }
+        if (e.t === 'sim') { Ed.tool[g.id] = 'sel'; marcarFerramenta(g.id); }
     }
     if (g.modo === 'br') { if (e.w < 0) { e.x += e.w; e.w = -e.w; } if (e.h < 0) { e.y += e.h; e.h = -e.h; } }
     redesenhar(g.id); terminouMudanca(d);
@@ -207,6 +307,7 @@ document.addEventListener('keydown', ev => {
     if (ativo && /INPUT|TEXTAREA|SELECT/.test(ativo.tagName)) return;
     const id = Object.keys(Ed.sel).find(k => Ed.sel[k] && document.querySelector(`.fig-tela[data-fig="${k}"]`));
     if ((ev.key === 'Delete' || ev.key === 'Backspace') && id) { ev.preventDefault(); apagarSelecionado(id); }
+    if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'd' && id) { ev.preventDefault(); duplicarSelecionado(id); }
     if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'z') {
         const fid = id || Object.keys(Ed.desfazer).find(k => (Ed.desfazer[k] || []).length);
         if (fid) { ev.preventDefault(); desfazerFigura(fid); }
@@ -217,11 +318,39 @@ function apagarSelecionado(id) {
     const i = d.elementos.findIndex(x => x.id === Ed.sel[id]); if (i < 0) return;
     guardarDesfazer(d); d.elementos.splice(i, 1); Ed.sel[id] = null; redesenhar(id); terminouMudanca(d);
 }
+function duplicarSelecionado(id) {
+    const d = figura(id), e = d && d.elementos.find(x => x.id === Ed.sel[id]); if (!e) return;
+    guardarDesfazer(d);
+    const c = JSON.parse(JSON.stringify(e)), o = passoGrade(d) * 3;
+    c.id = uid(); if ('x1' in c) { c.x1 += o; c.y1 += o; c.x2 += o; c.y2 += o; } else { c.x += o; c.y += o; }
+    d.elementos.push(c); Ed.sel[id] = c.id; redesenhar(id); terminouMudanca(d);
+}
+/** Gira 90° o elemento selecionado (símbolo: na própria caixa; traços: em torno do meio). */
+function girarSelecionado(id) {
+    const d = figura(id), e = d && d.elementos.find(x => x.id === Ed.sel[id]); if (!e) return;
+    guardarDesfazer(d);
+    if (ehCaixa(e)) { const cx = e.x + e.w / 2, cy = e.y + e.h / 2; [e.w, e.h] = [e.h, e.w]; e.x = Math.round(cx - e.w / 2); e.y = Math.round(cy - e.h / 2); if (e.t === 'sim') e.rot = ((Number(e.rot) || 0) + 90) % 360; }
+    else if ('x1' in e) { const mx = (e.x1 + e.x2) / 2, my = (e.y1 + e.y2) / 2; [e.x1, e.y1] = [mx - (e.y1 - my), my + (e.x1 - mx)]; [e.x2, e.y2] = [mx - (e.y2 - my), my + (e.x2 - mx)]; }
+    redesenhar(id); terminouMudanca(d);
+}
+function espelharSelecionado(id) {
+    const d = figura(id), e = d && d.elementos.find(x => x.id === Ed.sel[id]); if (!e || e.t !== 'sim') return;
+    guardarDesfazer(d); e.esp = !e.esp; redesenhar(id); terminouMudanca(d);
+}
 function desfazerFigura(id) {
     const d = figura(id), pilha = Ed.desfazer[id]; if (!d || !pilha || !pilha.length) return;
     d.elementos = JSON.parse(pilha.pop()); Ed.sel[id] = null; redesenhar(id); terminouMudanca(d);
 }
-function marcarFerramenta(id) { document.querySelectorAll(`.fig-ferr[data-fig="${id}"] [data-tool]`).forEach(b => b.classList.toggle('ativo', b.dataset.tool === (Ed.tool[id] || 'sel'))); }
+function marcarFerramenta(id) {
+    document.querySelectorAll(`.fig-ferr[data-fig="${id}"] [data-tool]`).forEach(b => b.classList.toggle('ativo', b.dataset.tool === (Ed.tool[id] || 'sel')));
+    document.querySelectorAll(`.fig-biblio[data-fig="${id}"] [data-forma]`).forEach(b => b.classList.toggle('ativo', Ed.tool[id] === 'sim' && b.dataset.forma === Ed.forma[id]));
+}
+
+/** Biblioteca de símbolos (fluxograma, blocos, elétrico e P&ID), com miniaturas desenhadas pelo próprio editor. */
+function htmlBibliotecaFigura(d) {
+    const mini = (k, def) => { const m = 34 / Math.max(def.w, def.h), w = def.w * m, h = def.h * m; return `<svg viewBox="-2 -2 ${w + 4} ${h + 4}" width="34" height="34" aria-hidden="true"><g stroke="#000" stroke-width="1.4" fill="none" stroke-linejoin="round">${def.d(w, h)}</g></svg>`; };
+    return `<div class="fig-biblio" data-fig="${d.id}">${GRUPOS_SIMBOLOS.map(([g, nome]) => `<details><summary>${nome}</summary><div class="fig-biblio-itens">${Object.entries(SIMBOLOS).filter(([, s]) => s.g === g).map(([k, s]) => `<button type="button" class="simb ${Ed.tool[d.id] === 'sim' && Ed.forma[d.id] === k ? 'ativo' : ''}" data-acao="fig-simbolo" data-fig="${d.id}" data-forma="${k}" title="${escAttr(s.n)}: clique no desenho para pôr (ou arraste para escolher o tamanho)">${mini(k, s)}</button>`).join('')}</div></details>`).join('')}</div>`;
+}
 
 // número escolhido no painel / na barra
 document.addEventListener('change', ev => {
@@ -233,6 +362,13 @@ document.addEventListener('change', ev => {
         e.num = garantirComponente(App.p, s.value === 'novo' ? n2(Math.max(0, ...numerosUsados(App.p).map(Number)) + 1) : s.value);
         redesenhar(d.id); terminouMudanca(d);
     } else if (s.dataset.figNumBarra) Ed.num[s.dataset.figNumBarra] = s.value;
+    else if (s.dataset.figProp) {
+        const d = figura(s.dataset.fig), e = d && d.elementos.find(x => x.id === Ed.sel[d.id]);
+        if (!e) return;
+        guardarDesfazer(d); e[s.dataset.figProp] = s.value;
+        if (e.t === 'ligacao') ligPadrao(d.id)[s.dataset.figProp] = s.value;
+        redesenharJa(d.id); salvar();
+    }
 });
 // textos e tamanhos redesenham ao digitar
 document.addEventListener('input', ev => {
@@ -244,7 +380,7 @@ document.addEventListener('input', ev => {
 // ------------------------------------------------------------ seções abaixo da figura (números e textos)
 function htmlSecoesFigura(p, d) {
     const nums = numerosDaFigura(d);
-    const textos = (d.elementos || []).filter(e => e.t === 'texto');
+    const textos = (d.elementos || []).filter(e => e.t === 'texto' || (e.t === 'sim' && (e.pt || e.en || e.es)));
     const comps = nums.map(n => p.ficha.componentes.find(c => n2(c.num) === n)).filter(Boolean);
     const contar = n => d.elementos.filter(e => e.t === 'seta' && n2(e.num) === n).length;
     return `<details class="fig-sec" open><summary><b>🔢 Descrição das setas</b> <small>${nums.length ? nums.length + ' número(s)' : 'nenhuma seta ainda'}</small></summary>
@@ -267,7 +403,7 @@ function atualizarSecoesFigura(id) {
 function traduzirTextosFigura(p, d) {
     let n = 0;
     for (const e of d.elementos || []) {
-        if (e.t !== 'texto' || !e.pt) continue;
+        if ((e.t !== 'texto' && e.t !== 'sim') || !e.pt) continue;
         let tr = traduzir(p, e.pt);
         if (!tr.en.length) {       // palavra a palavra, quando a expressão inteira não está no dicionário
             const ws = e.pt.split(/\s+/).map(w => traduzir(p, w));

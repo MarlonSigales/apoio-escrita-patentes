@@ -96,8 +96,8 @@ function autoPreencher(p) {
     put('universidade.resultado', f.vantagens || paragrafos(r.problemaSolucao).slice(-1)[0], 'formulário 1.8c');
     put('universidade.aplicacoesIndustriais', f.aplicacoes, 'formulário 1.8d');
     put('universidade.outrasAplicacoes', paragrafos(r.exemplos)[0], 'formulário 1.8e');
-    const empresas = [f.concorrentes, ...new Set(p.busca.resultados.map(x => x.depositante).filter(Boolean))].filter(Boolean).join('; ');
-    put('universidade.empresasMercado', empresas, 'formulário 2.4');
+    put('universidade.empresasMercado', f.concorrentes, 'formulário 2.4');
+    if (empresasNosFormularios(p)) feito.push('empresas da busca (formulário 2.4 e 2.5)');
     if (p.titulo) put('universidade.objetoProjeto', `O desenvolvimento do ${maiusculo(p.titulo)} faz parte de ${{ TCC: 'um Trabalho de Conclusão de Curso', Tese: 'uma Tese', 'Dissertação': 'uma Dissertação', Pesquisa: 'um projeto de pesquisa', 'Extensão': 'um projeto de extensão' }[u.tipoProjeto] || 'um projeto'}${f.campo ? ' e tem o objetivo de oferecer ' + primeiraMinuscula(f.campo) : ''}.`, 'objeto do projeto');
     if (p.titulo) put('universidade.memorando.data', hojeISO(), 'data do memorando');
     if (!u.areasAbrangidas.length && !p.autoFeito.areas) {
@@ -328,6 +328,47 @@ function lerRetornoJSON(texto) {
     };
 }
 
+/** Depositantes que são empresas (deixa de fora universidades, institutos e pessoas físicas). */
+function ehEmpresa(nome, sozinho = true) {
+    const n = String(nome || '').trim();
+    if (!n || /univers|ufpel|instituto|embrapa|faculdade|funda[cç][aã]o|individual|n[aã]o verificad|outros$/i.test(n)) return false;
+    if (/\b(ltda|ltd|s\.?\/?a\.?|inc|corp|corporation|co|company|gmbh|ag|ab|bv|spa|srl|s\.l|kg|llc|limited|holding|ind[uú]stria|industrial|implementos|m[aá]quinas|manufactur\w*|brasil|pl[aá]sticos|chemical|maquinari|agr[ií]col\w*|tecnologia|technolog\w*|equipamentos|metal[uú]rgica|me|epp|eireli)\b/i.test(n)) return true;
+    return sozinho && !/\s/.test(n.replace(/\s*\([^)]*\)/g, '').trim());       // depositante de uma palavra só (ex.: Marchesan, Agromac) costuma ser marca ou empresa
+}
+/** Empresas que depositaram os documentos da busca, da mais próxima para a menos, com o documento de origem. */
+function empresasDaBusca(p) {
+    const vistas = new Map();
+    for (const r of [...p.busca.resultados].sort((a, b) => (b.relevancia || 0) - (a.relevancia || 0))) {
+        const nomes = String(r.depositante || '').split(/\s*;\s*/).filter(Boolean);
+        for (const nome of nomes) {
+            const limpo = nome.replace(/\s*\((?:inv\.|PATENTSCOPE|Google)[^)]*\)/gi, '').trim();
+            if (!ehEmpresa(limpo, nomes.length === 1)) continue;
+            const k = semAcento(limpo).toLowerCase().replace(/[^a-z0-9]/g, '');
+            if (!vistas.has(k)) vistas.set(k, { nome: limpo, docs: [] });
+            if (r.num) vistas.get(k).docs.push(String(r.num).split(' / ')[0]);
+        }
+    }
+    return [...vistas.values()];
+}
+/**
+ * Leva as empresas da busca para os formulários da UFPel: 2.4 (empresas do mercado) e 2.5 (possíveis interessadas,
+ * para ofertar a tecnologia). Só acrescenta as que ainda não estão escritas; nunca apaga o que o aluno escreveu.
+ */
+function empresasNosFormularios(p) {
+    const u = p.universidade, emp = empresasDaBusca(p);
+    if (!emp.length) return 0;
+    const tem = (txt, nome) => semAcento(String(txt || '')).toLowerCase().includes(semAcento(nome).toLowerCase());
+    let n = 0;
+    const novasM = emp.filter(e => !tem(u.empresasMercado, e.nome));
+    if (novasM.length) { u.empresasMercado = [u.empresasMercado, novasM.map(e => e.nome).join('; ')].filter(x => String(x || '').trim()).join('; '); n += novasM.length; }
+    const novasO = emp.filter(e => !tem(u.empresasOferta, e.nome));
+    if (novasO.length) {
+        const linhas = novasO.map(e => `${e.nome} (possível interessada: depositante de ${e.docs.slice(0, 2).join(', ')}) [COMPLETAR contato]`);
+        u.empresasOferta = [String(u.empresasOferta || '').trim(), ...linhas].filter(Boolean).join('\n'); n += novasO.length;
+    }
+    return n;
+}
+
 /** Junta o retorno colado ao pedido: contagens, documentos e nota. Aceita o JSON padronizado ou texto livre. */
 function aplicarRetorno(p, texto) {
     const r = lerRetornoJSON(texto) || lerRetornoBusca(texto);
@@ -344,6 +385,7 @@ function aplicarRetorno(p, texto) {
     }
     if (r.nota && !b.notaRetorno) b.notaRetorno = r.nota;
     if (r.analise) for (const k of Object.keys(r.analise)) { const v = r.analise[k]; if (Array.isArray(v)) b.analise[k] = [...new Set([...(b.analise[k] || []), ...v])]; else if (v && !b.analise[k]) b.analise[k] = v; }
+    empresasNosFormularios(p);     // depositantes que são empresas → possíveis interessadas nos formulários da UFPel
     if (r.achou !== null && !p.universidade.buscaResultado) p.universidade.buscaResultado = r.achou ? 'Sim' : 'Não';
     // no caderno de fontes entra uma versão legível (o JSON cru não ajuda a pesquisar trechos)
     const legivel = r.json ? [r.nota, ...r.resultados.map(d => `${d.num} — ${d.titulo}. ${d.nota}`), ...(r.analise.diferenciais || []).map(x => 'Diferencial: ' + x), ...(r.analise.ameacas || []).map(x => 'Ameaça: ' + x)].filter(Boolean).join('\n') : texto;

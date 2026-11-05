@@ -376,6 +376,11 @@ const ACOES = {
     },
     'fig-tool'(el) { Ed.tool[el.dataset.fig] = el.dataset.tool; if (el.dataset.tool !== 'sel') Ed.sel[el.dataset.fig] = null; marcarFerramenta(el.dataset.fig); redesenhar(el.dataset.fig); },
     'fig-apagar'(el) { apagarSelecionado(el.dataset.fig); },
+    'fig-simbolo'(el) { const id = el.dataset.fig; Ed.tool[id] = 'sim'; Ed.forma[id] = el.dataset.forma; Ed.sel[id] = null; marcarFerramenta(id); redesenhar(id); },
+    'fig-girar'(el) { girarSelecionado(el.dataset.fig); },
+    'fig-espelhar'(el) { espelharSelecionado(el.dataset.fig); },
+    'fig-duplicar'(el) { duplicarSelecionado(el.dataset.fig); },
+    'fig-grade'(el) { const id = el.dataset.fig; Ed.grade[id] = Ed.grade[id] === false; el.classList.toggle('ativo', Ed.grade[id] !== false); redesenharJa(id); },
     'fig-desfazer'(el) { desfazerFigura(el.dataset.fig); },
     'fig-tirar-fundo'(el) { const d = figura(el.dataset.fig); if (d && confirm('Tirar a imagem de fundo desta figura? (os desenhos ficam)')) { d.img = ''; mudou(); } },
     'fig-mover'(el) {

@@ -290,10 +290,12 @@ PAGINAS.desenhos = {
             <label>Legenda <small>(completa a frase "A FIGURA ${i + 1} …" na breve descrição dos desenhos)</small><input type="text" data-c="desenhos.#${d.id}.legenda" value="${escAttr(d.legenda)}" placeholder="ilustra o diagrama de blocos do sistema…"></label>
             <div class="fig-ferr" data-fig="${d.id}">${FIG_TOOLS.map(([t, ic, tit]) => `<button type="button" class="ferr ${(Ed.tool[d.id] || 'sel') === t ? 'ativo' : ''}" data-acao="fig-tool" data-fig="${d.id}" data-tool="${t}" title="${escAttr(tit)}">${ic}</button>`).join('')}
                 <label class="campo-inline" title="Número da próxima seta">nº <select data-fig-num-barra="${d.id}">${htmlOpcoesNumero(p, d)}</select></label>
+                <button type="button" class="ferr ${Ed.grade[d.id] !== false ? 'ativo' : ''}" data-acao="fig-grade" data-fig="${d.id}" title="Grade: alinha os elementos (liga/desliga)">▦</button>
                 <span class="sep"></span>
                 <button type="button" class="btn btn-secondary btn-sm" data-acao="imagem-desenho" data-id="${d.id}" title="Foto, PNG, JPG ou SVG feito em outro programa (ex.: draw.io)">🖼️ ${d.img ? 'Trocar' : 'Subir'} imagem</button>
                 ${d.img ? `<button type="button" class="btn-link" data-acao="fig-tirar-fundo" data-fig="${d.id}">tirar imagem</button>` : ''}
                 <button type="button" class="btn-icone" data-acao="fig-desfazer" data-fig="${d.id}" title="Desfazer (Ctrl+Z)">↶</button></div>
+            ${htmlBibliotecaFigura(d)}
             <div class="fig-area"><div class="fig-tela" data-fig="${d.id}"></div><div class="fig-painel" data-fig="${d.id}"></div></div>
             <div class="fig-secoes" data-fig="${d.id}">${htmlSecoesFigura(p, d)}</div></div>`;
         return `${cabecalho('desenhos', 'Faça os desenhos antes do relatório: os números das setas viram a lista de componentes e já escrevem a breve descrição dos desenhos e a descrição da invenção. Figuras em preto e branco, com o mínimo de texto. Obrigatórias para modelo de utilidade.')}
@@ -367,7 +369,7 @@ PAGINAS.universidade = {
         <label>2.2 Material de terceiros?${rad('universidade.materialTerceiros', ['Não', 'Sim, com termo', 'Sim, sem termo'])}</label>
         <label>2.3 Empresas já interessadas?${rad('universidade.empresasInteressadas', ['Não', 'Sim'])}</label>${u.empresasInteressadas === 'Sim' ? campo('universidade.empresasInteressadasQuais', 'Quais?') : ''}
         ${campo('universidade.empresasMercado', '2.4 Ao menos 5 empresas do mercado', { tipo: 'textarea', largo: true, linhas: 2, ph: f.concorrentes })}
-        ${campo('universidade.empresasOferta', '2.5 Ao menos 3 empresas para ofertar (com contatos)', { tipo: 'textarea', largo: true, linhas: 2 })}</div>
+        ${campo('universidade.empresasOferta', '2.5 Ao menos 3 empresas para ofertar (com contatos)', { tipo: 'textarea', largo: true, linhas: 3, dica: 'as empresas que depositaram as patentes da busca entram aqui como possíveis interessadas' })}</div>
         <p class="nota">Campos em branco usam o texto da ficha (mostrado em cinza).</p></div>
         <div class="card"><div class="card-topo"><h2>7. Formulário de Busca de Anterioridade</h2><button type="button" class="btn btn-secondary btn-sm" data-acao="baixar-doc" data-doc="formbusca">⬇ .docx</button></div>
         <div class="grade-campos">${campo('universidade.cadastroProjeto', 'Nº de cadastro do projeto (Cobalto ou PPG)')}${campo('universidade.tipoProjeto', 'Tipo', { tipo: 'select', opts: ['TCC', 'Pesquisa', 'Dissertação', 'Tese', 'Extensão'] })}

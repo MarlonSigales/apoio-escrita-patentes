@@ -184,3 +184,12 @@ input[type=date] { display: block; width: 100%; padding: 0.42rem 0.6rem; border:
 
 .melhoria { margin-top: .6rem; border-top: 1px dashed var(--borda); padding-top: .4rem; }
 .alertas li.ok { background: #eef7f4; color: #1f5f45; }
+.fig-biblio { display: flex; flex-wrap: wrap; gap: .35rem; margin: -.2rem 0 .5rem; }
+.fig-biblio details { border: 1px solid var(--borda); border-radius: 8px; background: #fff; }
+.fig-biblio details[open] { flex: 1 1 100%; }
+.fig-biblio summary { cursor: pointer; padding: .3rem .6rem; font-size: .86rem; font-weight: 600; }
+.fig-biblio-itens { display: flex; flex-wrap: wrap; gap: .3rem; padding: .2rem .45rem .5rem; }
+.fig-biblio .simb { width: 46px; height: 46px; padding: 4px; border: 1px solid var(--borda); border-radius: 6px; background: #fff; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+.fig-biblio .simb:hover { border-color: var(--teal); }
+.fig-biblio .simb.ativo { background: var(--verde-claro); border-color: var(--teal); box-shadow: 0 0 0 2px var(--teal) inset; }
+.fig-painel select { max-width: 100%; }

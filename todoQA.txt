@@ -33,6 +33,9 @@ Atualizado em 04/11/2026 (versão 2).
    busca em JSON; "Entenda: PI ou MU" incorporado à aba "Sua invenção" (escolha num só lugar).
 11 [resolvido 04/11/2026] Documento com número já registrado não ganha nova entrada na busca (mesmo vindo de outra base
    ou com outra grafia/código de tipo): as informações e as bases são juntadas na entrada existente.
+12 [resolvido 04/11/2026] Desenhos: biblioteca de símbolos (fluxograma, blocos, elétrico, P&ID), ligações com encaixe,
+   estilos e cotovelos, grade, girar, espelhar e duplicar.
+13 [resolvido 04/11/2026] Empresas depositantes da busca vão para os itens 2.4 e 2.5 do Formulário de Informação Tecnológica.
 2 [futuro] Ampliar o catálogo IPC/CPC (hoje ~80 classes, foco em agro, eletrônica e controle).
 3 [futuro] Ler PDF direto como fonte (hoje: copiar e colar o texto).
 4 [futuro] Nuvem da equipe (MEGA), como no Projeto Conceitual, com senha e dados resguardados.
