@@ -292,7 +292,7 @@ function blocosRelBusca(p) {
         T('1. Classificações usadas (marcadas por aproximação e conferidas pelo aluno)', { b: true }),
         T(classesBusca(p).map(c => `${c} — ${tituloClasse(c) || 'informada pelo usuário'}`).join('\n') || '[nenhuma]', { al: 'e' }),
         T('2. Registro da busca', { b: true }),
-        { t: 'tab', cab: true, tam: 8, linhas: [['Base', 'Estr.', 'Sequência exata', 'Resultados', 'Triados', 'Data'], ...buscas.filter(x => ex[x.id] && ex[x.id].feita).map(x => [BASES[x.base].nome, x.est, x.consulta, String(ex[x.id].n ?? ''), String(ex[x.id].triados ?? ''), dataBR(ex[x.id].data)]), ...p.busca.registroColado.map(r => [(BASES[r.base] || BASES.outra).nome, '—', r.consulta, String(r.n ?? ''), String(r.triados ?? ''), 'retorno colado'])], larg: [1300, 500, 5300, 900, 800, 1000] },
+        { t: 'tab', cab: true, tam: 8, linhas: [['Base', 'Estr.', 'Sequência exata', 'Resultados', 'Triados', 'Data'], ...buscas.filter(x => ex[x.id] && ex[x.id].feita).map(x => [BASES[x.base].nome, x.est, x.consulta, String(ex[x.id].n ?? ''), String(ex[x.id].triados ?? ''), dataBR(ex[x.id].data)]), ...p.busca.registroColado.map(r => [(BASES[r.base] || BASES.outra).nome, r.est || '—', r.consulta + (r.acessada === false ? ' (não acessada)' : '') + (r.obs ? ' — ' + r.obs : ''), String(r.n ?? ''), String(r.triados ?? ''), (p.busca.analise && p.busca.analise.data) ? dataBR(p.busca.analise.data) : 'retorno da IA'])], larg: [1300, 500, 5300, 900, 800, 1000] },
         T('3. Documentos mais relevantes', { b: true }),
         { t: 'tab', cab: true, tam: 8, linhas: [['Nº', 'Título', 'Base', 'Cat.', 'Lido', 'Rel.', 'Nota / diferença'], ...rs.map(r => [r.num, r.titulo, r.base, r.categoria, r.lido, String(r.relevancia), r.nota + (r.link ? '\n' + r.link : '')])], larg: [1500, 2300, 1000, 500, 900, 500, 3100] }];
     if (car.length && rs.length) {
@@ -302,10 +302,15 @@ function blocosRelBusca(p) {
         const dif = car.filter((c, i) => rs.every(r => (r.carac['C' + (i + 1)] || '?') === 'N'));
         b.push(T('5. Características possivelmente diferenciais (não divulgadas por nenhum documento)', { b: true }), T(dif.length ? dif.map(x => '- ' + x).join('\n') : '[nenhuma característica marcada como N em todos os documentos]', { al: 'e' }));
     }
+    const an = p.busca.analise || {};
+    const bloco = (tit, xs) => { if (xs && xs.length) b.push(T(tit, { b: true }), T(xs.map(x => '- ' + x).join('\n'), { al: 'e' })); };
+    bloco('5a. Diferenciais apontados na busca', an.diferenciais);
+    bloco('5b. Documentos e combinações que mais ameaçam a novidade', an.ameacas);
+    bloco('5c. Recomendações', an.recomendacoes);
     const div = p.contexto.divulgacoes.filter(d => d.data).sort((a, c) => a.data.localeCompare(c.data));
     b.push(T('6. Alerta de prazos', { b: true }),
-        T(div.length ? div.map(d => `${dataBR(d.data)} — ${d.meio}: período de graça até ${dataBR(somarMeses(d.data, 12))} (art. 12 da Lei 9.279/96).`).join('\n') : 'Nenhuma divulgação registrada. Não divulgue antes do depósito.', { al: 'e' }),
-        T('7. Lacunas', { b: true }), T(Object.keys(BASES).filter(k => k !== 'outra' && k !== 'capes' && !buscas.some(x => x.base === k && ex[x.id] && ex[x.id].feita) && !p.busca.registroColado.some(r => r.base === k)).map(k => '- ' + BASES[k].nome + ': não pesquisada').join('\n') || 'Todas as bases foram pesquisadas.', { al: 'e' }));
+        T((div.length ? div.map(d => `${dataBR(d.data)} — ${d.meio}: período de graça até ${dataBR(somarMeses(d.data, 12))} (art. 12 da Lei 9.279/96).`).join('\n') : 'Nenhuma divulgação registrada. Não divulgue antes do depósito.') + (an.prazos ? '\n' + an.prazos : ''), { al: 'e' }),
+        T('7. Lacunas', { b: true }), T((an.lacunas && an.lacunas.length ? an.lacunas.map(x => '- ' + x).join('\n') + '\n' : '') + Object.keys(BASES).filter(k => k !== 'outra' && k !== 'capes' && !buscas.some(x => x.base === k && ex[x.id] && ex[x.id].feita) && !p.busca.registroColado.some(r => r.base === k)).map(k => '- ' + BASES[k].nome + ': não pesquisada').join('\n') || 'Todas as bases foram pesquisadas.', { al: 'e' }));
     return b;
 }
 

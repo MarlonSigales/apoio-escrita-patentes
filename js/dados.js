@@ -51,7 +51,8 @@ function pedidoVazio() {
             md: '',
             retorno: '',         // texto colado do retorno da busca (relatório da IA, PDF, planilha…)
             registroColado: [],  // { id, base, consulta, n, triados } lidos do retorno colado
-            notaRetorno: ''      // conclusão/resumo lido do retorno colado
+            notaRetorno: '',     // conclusão/resumo lido do retorno colado
+            analise: { diferenciais: [], ameacas: [], lacunas: [], recomendacoes: [], prazos: '', data: '' }   // vindos do JSON da IA
         },
         autoFeito: {},           // campos já pré-preenchidos uma vez (não repreenche o que o aluno apagou)
         relatorio: { campo: '', fundamentos: '', problemaSolucao: '', desenhos: '', descricao: '', exemplos: '' },

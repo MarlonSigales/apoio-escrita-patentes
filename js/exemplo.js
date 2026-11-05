@@ -8,28 +8,26 @@
 
 'use strict';
 
-/** Retorno da busca como veio no Formulário de Busca de Anterioridade do projeto (contagens por base e palavra-chave). */
-const RETORNO_EXEMPLO = `INPI - (http://www.inpi.gov.br/)
-Manômetro digital / 16
-Sensor de pressão sem fio / 68
-Sensor de pressão / 1843
-Monitoramento de pressão / 506
-
-USPTO (EUA) - (http://patft.uspto.gov/)
-Pressure sensor / 1538402
-
-ESPACENET (EUROPA) - (http://worldwide.espacenet.com/)
-Digital pressure gauge / 149602
-
-| Documento | Título | Base | Relevância | Observação |
-|---|---|---|---|---|
-| PI 9203934-0 A | Dispositivo de medição de pressão | INPI | 4 | Alguma semelhança, mas outro campo de aplicação |
-| MU 8402728-2 U | Manômetro digital automotivo | INPI | 3 | Área automotiva, instalação fixa |
-
-Resultado das buscas realizadas — foram encontradas anterioridades? [ x ] Não [ ] Sim
-
-Nota explicativa
-Os documentos encontrados tratam de manômetros digitais na área da saúde e automotiva, com instalação fixa; nenhum apresenta a mesma construção portátil, sem fio e aplicada a circuitos pneumáticos de máquinas agrícolas.`;
+/** Retorno da busca no formato JSON pedido pelo prompt (com as contagens do Formulário de Busca de Anterioridade do projeto). */
+const RETORNO_EXEMPLO = JSON.stringify({
+    formato: 'apoio-escrita-patentes-busca', versao: 1, data_busca: '2024-07-30',
+    registro: [
+        { base: 'inpi', estrategia: 'A', consulta: 'Manômetro digital', resultados: 16, triados: 16, acessada: true, obs: '' },
+        { base: 'inpi', estrategia: 'A', consulta: 'Sensor de pressão sem fio', resultados: 68, triados: 68, acessada: true, obs: '' },
+        { base: 'inpi', estrategia: 'A', consulta: 'Sensor de pressão', resultados: 1843, triados: 100, acessada: true, obs: '' },
+        { base: 'inpi', estrategia: 'C', consulta: 'Monitoramento de pressão', resultados: 506, triados: 100, acessada: true, obs: '' },
+        { base: 'uspto', estrategia: 'A', consulta: 'Pressure sensor', resultados: 1538402, triados: 0, acessada: true, obs: 'resultado amplo demais; refinar com SAME e CPC' },
+        { base: 'espacenet', estrategia: 'A', consulta: 'Digital pressure gauge', resultados: 149602, triados: 0, acessada: true, obs: '' }
+    ],
+    documentos: [
+        { numero: 'PI 9203934-0 A', titulo: 'Dispositivo de medição de pressão', depositante: '', prioridade: '', publicacao: '', pais: 'BR', situacao: 'não verificada', link: '', base: 'inpi', tipo: 'Patente ou MU', categoria: 'A', relevancia: 4, lido: 'resumo', diferenca: 'Alguma semelhança, mas outro campo de aplicação', caracteristicas: { C1: 'P' } },
+        { numero: 'MU 8402728-2 U', titulo: 'Manômetro digital automotivo', depositante: '', prioridade: '', publicacao: '', pais: 'BR', situacao: 'não verificada', link: '', base: 'inpi', tipo: 'Patente ou MU', categoria: 'A', relevancia: 3, lido: 'resumo', diferenca: 'Área automotiva, instalação fixa', caracteristicas: { C1: 'P' } }
+    ],
+    anterioridades_encontradas: false,
+    nota_explicativa: 'Os documentos encontrados tratam de manômetros digitais na área da saúde e automotiva, com instalação fixa; nenhum apresenta a mesma construção portátil, sem fio e aplicada a circuitos pneumáticos de máquinas agrícolas.',
+    diferenciais: ['Leitura portátil, sem fio e com bateria própria aplicada a circuitos pneumáticos de máquinas agrícolas'],
+    ameacas: [], lacunas: ['PATENTSCOPE e Google Patents não pesquisados'], recomendacoes: ['Refinar a busca no USPTO com SAME e classe G01L'], alerta_prazos: ''
+}, null, 1);
 
 function exemploPressao() {
     const p = pedidoVazio();

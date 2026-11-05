@@ -31,9 +31,14 @@ function ok(cond, nome) { RES.push([!!cond, nome]); }
     ok(ETAPAS[1].id === 'ficha', '"Sua invenção" é a primeira aba depois do Início');
     const vz = normalizarPedido(pedidoVazio());
     ok(autoPreencher(vz).length === 0, 'pedido vazio continua vazio');
-    const ret = lerRetornoBusca(RETORNO_EXEMPLO);
-    ok(ret.registro.length === 6 && ret.registro.some(r => r.base === 'inpi' && r.n === 1843), 'lê contagens "palavra / nº" por base');
-    ok(ret.resultados.length === 2 && ret.achou === false && /manômetros/.test(ret.nota), 'lê documentos, resultado e nota do retorno');
+    const rj = lerRetornoJSON(RETORNO_EXEMPLO);
+    ok(rj && rj.registro.length === 6 && rj.registro.some(r => r.base === 'inpi' && r.n === 1843 && r.est === 'A'), 'lê o JSON padronizado: contagens por base e estratégia');
+    ok(rj.resultados.length === 2 && rj.achou === false && /manômetros/.test(rj.nota) && rj.resultados[0].carac.C1 === 'P' && rj.analise.diferenciais.length === 1, 'lê o JSON: documentos, quadro S/P/N, nota e análise');
+    ok(lerRetornoJSON('Aqui está:\n```json\n' + RETORNO_EXEMPLO + '\n```\nfim') !== null, 'aceita o JSON dentro de um bloco ```json');
+    ok(lerRetornoJSON('{"x":1}') === null && lerRetornoJSON('texto qualquer') === null, 'texto que não é o JSON cai na leitura de texto');
+    ok(/apoio-escrita-patentes-busca/.test(gerarMD(p)) && !/relatório em PDF/.test(gerarMD(p)), 'o prompt pede o retorno em JSON, não em PDF');
+    const ret = lerRetornoBusca('INPI - (http://www.inpi.gov.br/)\nManômetro digital / 16\nSensor de pressão / 1843\n\nUSPTO\nPressure sensor / 1538402\n\n- PI 9203934-0 A — Dispositivo de medição de pressão\nforam encontradas anterioridades? [ x ] Não');
+    ok(ret.registro.length === 3 && ret.registro.some(r => r.base === 'uspto' && r.n === 1538402) && ret.resultados.length === 1 && ret.achou === false, 'continua lendo retorno antigo em texto (PDF copiado)');
     const tab = lerRetornoBusca('| Base | Sequência exata | Resultados | Triados |\n|---|---|---|---|\n| Espacenet | ctxt = "pressure sensor" | 34 | 25 |\n\n| Registro | Nome | Resumo | Nível de proximidade |\n|---|---|---|---|\n| BR 10 2016 023064 B1 | Dosador | x | Alta |');
     ok(tab.registro[0].base === 'espacenet' && tab.registro[0].n === 34 && tab.resultados[0].relevancia === 4, 'lê tabelas em Markdown do retorno');
     const rp = normalizarPedido(pedidoVazio()); rp.titulo = 'Máquina dosadora de sementes';

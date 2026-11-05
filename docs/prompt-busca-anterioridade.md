@@ -69,16 +69,32 @@ Termos sugeridos pelo usuário: {{TERMOS}}
 - Diferenciar o que foi **lido** (texto completo, reivindicações, descrição, resumo, só título).
 - Inferir situação legal pelo código de tipo (A2, B1, U2, Y1 etc.) e indicar que a vigência precisa ser conferida no pePI/base oficial.
 
-## 4. O QUE ENTREGAR (relatório em PDF, com links clicáveis)
-- **a) Registro da busca:** base, data, estratégia, sequência exata, número de resultados e quantos foram triados.
-- **b) Tabela com 20 a 30 documentos mais relevantes:** número (com link), título, depositante, data de prioridade e de publicação, país, situação legal (vigente, extinta, em exame, sem entrada no Brasil, ou "não verificada"), extensão da leitura e nota de relevância de 1 a 5.
-- **c) Quadro comparativo** dos 10 documentos mais próximos × características do objeto (C1…Cn definidas a partir da seção 1), com legenda S/P/N/?.
-- **d) Características possivelmente diferenciais** (não encontradas em nenhum documento) e **documentos que mais ameaçam** novidade e atividade inventiva, incluindo combinações prováveis do examinador.
-- **e) Lacunas:** bases não acessadas, idiomas não cobertos, buscas a refazer manualmente (com as sequências prontas).
-- **f) Recomendações:** próximos passos, refinamentos, pontos para o NIT/núcleo de inovação e para um agente de propriedade industrial, modalidade provável (invenção ou modelo de utilidade).
-- **g) Alerta de prazos:** cronologia de divulgações do próprio grupo e período de graça (art. 12 da Lei 9.279/96 — 12 meses), destacado no resumo executivo.
-- Literatura não patentária em tabela própria, com referência, conteúdo relevante, extensão da leitura e link.
-- Resumo executivo de no máximo uma página no início.
+## 4. O QUE ENTREGAR — um único JSON (não gere PDF nem relatório em texto)
+Responda **somente** com um bloco ```json contendo um objeto no formato abaixo, sem texto antes ou depois. Ele é importado direto no app "Apoio à Escrita de Patentes" e vira o Formulário de Busca de Anterioridade e o relatório da busca; por isso **mantenha os nomes dos campos e os valores permitidos**. Campos sem informação: use "" ou [] (nunca invente). Datas em AAAA-MM-DD.
+
+```json
+{
+  "formato": "apoio-escrita-patentes-busca",
+  "versao": 1,
+  "data_busca": "AAAA-MM-DD",
+  "registro": [
+    { "base": "inpi | google | espacenet | patentscope | uspto | scholar | scielo | capes | outra", "estrategia": "A | B | C | D | E | F | G", "consulta": "sequência exata usada", "resultados": 0, "triados": 0, "acessada": true, "obs": "ex.: bloqueio por CAPTCHA resolvido pelo usuário" }
+  ],
+  "documentos": [
+    { "numero": "BR 10 2016 023064 B1", "titulo": "", "depositante": "", "prioridade": "AAAA-MM-DD", "publicacao": "AAAA-MM-DD", "pais": "BR", "situacao": "vigente | extinta | em exame | sem entrada no Brasil | não verificada", "link": "https://...", "base": "inpi", "tipo": "Patente ou MU | Artigo ou Livro | Trabalho de Conclusão | Apresentação | Outro", "categoria": "X | Y | A | O | L", "relevancia": 1, "lido": "título | resumo | reivindicações | texto completo", "diferenca": "em que difere da invenção", "caracteristicas": { "C1": "S | P | N | ?" } }
+  ],
+  "anterioridades_encontradas": false,
+  "nota_explicativa": "conclusão curta: o que foi encontrado e em que a invenção se diferencia",
+  "diferenciais": ["característica que não aparece em nenhum documento"],
+  "ameacas": ["documento ou combinação que mais ameaça novidade/atividade inventiva"],
+  "lacunas": ["base não acessada, idioma não coberto, busca a refazer (com a sequência)"],
+  "recomendacoes": ["próximo passo para o NIT / agente de PI"],
+  "alerta_prazos": "divulgações do grupo e período de graça (art. 12 da Lei 9.279/96)"
+}
+```
+- `registro`: uma linha por sequência executada em cada base (estratégias A–G), com o número de resultados e quantos foram triados; bases não acessadas entram com `"acessada": false` e a sequência pronta em `consulta`.
+- `documentos`: os 20 a 30 mais relevantes (relevância 1–5; categoria X = sozinho tira a novidade, Y = combinado com outro, A = estado geral da técnica). Em `caracteristicas`, use os códigos C1, C2… da lista do item 3.6 (liste as características C1, C2… do seu objeto) (S = divulga, P = parcialmente, N = não, ? = não verificado), ao menos para os 10 mais próximos.
+- Prefira o JSON também por economia: não repita textos longos nem copie resumos inteiros dos documentos.
 
 ## 5. REGRAS
 - Não inventar números de patente, datas, depositantes nem conteúdo de reivindicações. Se não puder verificar, escrever "não verificado".
@@ -86,5 +102,5 @@ Termos sugeridos pelo usuário: {{TERMOS}}
 - Não fazer afirmação conclusiva sobre patenteabilidade: apresentar avaliação preliminar e destacar que a análise formal cabe a um profissional.
 - Material e processo de fabricação isolados (ex.: impressão 3D, troca de material) não são tratados como diferencial; avaliar pela geometria, pelo princípio de funcionamento e pelo efeito técnico.
 - Tratar divulgações anteriores da própria equipe como potencial estado da técnica.
-- Responder em português, com tabelas e linguagem técnica clara.
+- Responder em português, somente com o JSON do item 4.
 - {{REGRAS ADICIONAIS DO USUÁRIO, se houver}}

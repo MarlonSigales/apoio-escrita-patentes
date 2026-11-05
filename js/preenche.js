@@ -211,22 +211,72 @@ function lerTabela(bloco, registro, resultados, baseAtual) {
     }
 }
 
-/** Junta o retorno colado ao pedido: contagens, documentos e nota. Devolve um resumo do que entrou. */
+const FORMATO_BUSCA = 'apoio-escrita-patentes-busca';
+const BASES_JSON = { inpi: 'inpi', pepi: 'inpi', google: 'google', 'google patents': 'google', espacenet: 'espacenet', epo: 'espacenet', patentscope: 'patentscope', wipo: 'patentscope', uspto: 'uspto', ppubs: 'uspto', scholar: 'scholar', 'google acadêmico': 'scholar', 'google academico': 'scholar', scielo: 'scielo', capes: 'capes' };
+function baseJSON(b) { const k = semAcento(String(b || '')).trim(); return BASES_JSON[k] || baseDoTexto(k) || (k ? 'outra' : ''); }
+const umDe = (v, lista, padrao) => { const x = String(v || '').trim(); return lista.find(o => semAcento(o) === semAcento(x)) || padrao; };
+const dataISO = v => { const s = String(v || '').trim(); const a = s.match(/^(\d{4})-(\d{2})-(\d{2})/); if (a) return a[0]; const b = s.match(/^(\d{2})\/(\d{2})\/(\d{4})/); return b ? `${b[3]}-${b[2]}-${b[1]}` : ''; };
+const lista = v => (Array.isArray(v) ? v : v ? [v] : []).map(x => String(typeof x === 'object' ? (x.texto || x.descricao || JSON.stringify(x)) : x).trim()).filter(Boolean);
+
+/**
+ * Lê o JSON padronizado pedido no prompt (formato "apoio-escrita-patentes-busca"). Aceita o JSON puro ou dentro de
+ * um bloco ```json. Devolve null se o texto não for esse JSON (aí vale a leitura de texto livre).
+ */
+function lerRetornoJSON(texto) {
+    const t = String(texto || '');
+    const bloco = t.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    let fonte = bloco ? bloco[1] : t;
+    const ini = fonte.indexOf('{'), fim = fonte.lastIndexOf('}');
+    if (ini < 0 || fim <= ini) return null;
+    let o;
+    try { o = JSON.parse(fonte.slice(ini, fim + 1)); } catch (e) { return null; }
+    if (!o || typeof o !== 'object' || (!o.registro && !o.documentos)) return null;
+    if (o.formato && o.formato !== FORMATO_BUSCA) return null;
+    const registro = (Array.isArray(o.registro) ? o.registro : []).map(r => ({
+        id: uid(), base: baseJSON(r.base), est: String(r.estrategia || '').trim().slice(0, 1).toUpperCase(), consulta: String(r.consulta || r.sequencia || '').trim(),
+        n: r.resultados === '' || r.resultados == null || isNaN(Number(r.resultados)) ? '' : Number(r.resultados),
+        triados: r.triados === '' || r.triados == null || isNaN(Number(r.triados)) ? '' : Number(r.triados),
+        acessada: r.acessada !== false, obs: String(r.obs || '').trim()
+    })).filter(r => r.consulta);
+    const resultados = (Array.isArray(o.documentos) ? o.documentos : []).map(d => {
+        const carac = {};
+        for (const [k, v] of Object.entries(d.caracteristicas || {})) { const m = String(k).match(/C?(\d+)/i); const val = String(v || '').trim().toUpperCase().slice(0, 1); if (m && 'SPN?'.includes(val)) carac['C' + m[1]] = val; }
+        const rel = Math.min(5, Math.max(1, Math.round(Number(d.relevancia) || 3)));
+        return {
+            num: String(d.numero || d.num || '').trim(), titulo: String(d.titulo || '').trim(), depositante: String(d.depositante || '').trim(),
+            prioridade: dataISO(d.prioridade), publicacao: dataISO(d.publicacao), pais: String(d.pais || '').trim(), situacao: String(d.situacao || '').trim(),
+            link: /^https?:\/\//.test(String(d.link || '')) ? String(d.link).trim() : '', base: BASES[baseJSON(d.base)] ? BASES[baseJSON(d.base)].nome : String(d.base || '').trim(),
+            tipoDoc: umDe(d.tipo, TIPOS_DOC, 'Patente ou MU'), categoria: umDe(d.categoria, Object.keys(CATEGORIAS), 'A'), relevancia: rel,
+            lido: umDe(d.lido, ['título', 'resumo', 'reivindicações', 'texto completo'], 'resumo'),
+            nota: [String(d.diferenca || d.observacao || '').trim(), d.situacao ? 'Situação: ' + String(d.situacao).trim() : ''].filter(Boolean).join(' · '), carac
+        };
+    }).filter(d => d.num || d.titulo);
+    const achou = typeof o.anterioridades_encontradas === 'boolean' ? o.anterioridades_encontradas : null;
+    return {
+        json: true, registro, resultados, nota: String(o.nota_explicativa || '').trim(), achou,
+        analise: { diferenciais: lista(o.diferenciais), ameacas: lista(o.ameacas), lacunas: lista(o.lacunas), recomendacoes: lista(o.recomendacoes), prazos: String(o.alerta_prazos || '').trim(), data: dataISO(o.data_busca) }
+    };
+}
+
+/** Junta o retorno colado ao pedido: contagens, documentos e nota. Aceita o JSON padronizado ou texto livre. */
 function aplicarRetorno(p, texto) {
-    const r = lerRetornoBusca(texto);
+    const r = lerRetornoJSON(texto) || lerRetornoBusca(texto);
     const b = p.busca;
     b.retorno = (b.retorno ? b.retorno + '\n\n' : '') + texto;
     let nr = 0, nd = 0;
     for (const x of r.registro) if (!b.registroColado.some(y => y.base === x.base && y.consulta === x.consulta)) { b.registroColado.push(x); nr++; }
     for (const x of r.resultados) {
         const ja = b.resultados.find(y => normNum(y.num) === normNum(x.num));
-        if (ja) { for (const k of ['titulo', 'link', 'depositante', 'publicacao']) if (!ja[k] && x[k]) ja[k] = x[k]; continue; }
+        if (ja) { for (const k of ['titulo', 'link', 'depositante', 'publicacao', 'prioridade', 'situacao', 'pais']) if (!ja[k] && x[k]) ja[k] = x[k]; for (const [c, v] of Object.entries(x.carac || {})) if (!ja.carac[c] || ja.carac[c] === '?') ja.carac[c] = v; continue; }
         const cat = x.categoria || 'A';   // X/Y só quando o retorno disser; o aluno ajusta
         b.resultados.push(Object.assign({ id: uid(), num: '', titulo: '', base: '', link: '', relevancia: 3, lido: 'resumo', nota: '', carac: {}, categoria: cat, tipoDoc: 'Patente ou MU', publicacao: '', depositante: '' }, x, { categoria: cat }));
         nd++;
     }
     if (r.nota && !b.notaRetorno) b.notaRetorno = r.nota;
+    if (r.analise) for (const k of Object.keys(r.analise)) { const v = r.analise[k]; if (Array.isArray(v)) b.analise[k] = [...new Set([...(b.analise[k] || []), ...v])]; else if (v && !b.analise[k]) b.analise[k] = v; }
     if (r.achou !== null && !p.universidade.buscaResultado) p.universidade.buscaResultado = r.achou ? 'Sim' : 'Não';
-    if (!p.fontes.some(f => f.nome === 'Retorno da busca de anterioridade')) p.fontes.push({ id: uid(), nome: 'Retorno da busca de anterioridade', tipo: 'texto', texto, data: hojeISO(), ativa: true });
-    return { nr, nd, nota: !!r.nota };
+    // no caderno de fontes entra uma versão legível (o JSON cru não ajuda a pesquisar trechos)
+    const legivel = r.json ? [r.nota, ...r.resultados.map(d => `${d.num} — ${d.titulo}. ${d.nota}`), ...(r.analise.diferenciais || []).map(x => 'Diferencial: ' + x), ...(r.analise.ameacas || []).map(x => 'Ameaça: ' + x)].filter(Boolean).join('\n') : texto;
+    if (!p.fontes.some(f => f.nome === 'Retorno da busca de anterioridade')) p.fontes.push({ id: uid(), nome: 'Retorno da busca de anterioridade', tipo: r.json ? 'json' : 'texto', texto: legivel, data: hojeISO(), ativa: true });
+    return { nr, nd, nota: !!r.nota, json: !!r.json };
 }

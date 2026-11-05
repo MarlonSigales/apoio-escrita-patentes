@@ -26,7 +26,9 @@ local, com `python3 -m http.server`.
 4. **Busca de anterioridade: primeiro o prompt e o retorno colado, depois o que for à mão.** A etapa segue esta ordem:
    1. Termos.
    2. **Prompt gerado** para uma IA com navegador. O prompt manda a IA parar e pedir ao usuário que resolva CAPTCHAs e logins manualmente.
-   3. **Retorno da busca colado.** O app lê tabelas em Markdown, texto de PDF e linhas como "Sensor de pressão / 1843" debaixo do nome da base.
+      O retorno é pedido **em JSON** num formato fixo (`"formato": "apoio-escrita-patentes-busca"`), e não em PDF. Assim a IA gasta menos créditos e o app importa sem erro.
+      O JSON traz: registro por base, estratégia, sequência e resultados; documentos com categoria, relevância, link e o quadro S/P/N por característica C1…Cn; e a conclusão, os diferenciais, as ameaças, as lacunas e as recomendações.
+   3. **Retorno colado ou aberto como arquivo `.json`.** Retornos antigos em texto (PDF copiado, tabelas) continuam aceitos. O app lê tabelas em Markdown, texto de PDF e linhas como "Sensor de pressão / 1843" debaixo do nome da base.
       Daí saem as contagens por base, os documentos com relevância e link, a conclusão e se houve anterioridades.
       Tudo isso vai direto para o **Formulário de Busca de Anterioridade**.
    4. Documentos e quadro comparativo, com as características tiradas das reivindicações.

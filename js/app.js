@@ -364,12 +364,20 @@ const ACOES = {
         if (!t.trim()) return avisar('Cole o retorno da busca no campo antes.', 'erro');
         const r = aplicarRetorno(App.p, t);
         autoPreencher(App.p);
-        avisar(`Retorno lido: ${r.nr} contagem(ns), ${r.nd} documento(s)${r.nota ? ' e a conclusão' : ''}. Já estão no Formulário de Busca de Anterioridade.`, 'ok', 7000);
+        avisar(`${r.json ? 'JSON' : 'Texto'} lido: ${r.nr} contagem(ns), ${r.nd} documento(s)${r.nota ? ' e a conclusão' : ''}. Já estão no Formulário de Busca de Anterioridade.`, r.nr || r.nd ? 'ok' : 'erro', 7000);
+        mudou();
+    },
+    'arquivo-retorno': async () => {
+        const [a] = await escolherArquivo('.json,.txt,.md');
+        if (!a) return;
+        const t = await a.text();
+        const r = aplicarRetorno(App.p, t); autoPreencher(App.p);
+        avisar(`${r.json ? 'JSON' : 'Texto'} lido: ${r.nr} contagem(ns), ${r.nd} documento(s)${r.nota ? ' e a conclusão' : ''}.`, r.nr || r.nd ? 'ok' : 'erro', 7000);
         mudou();
     },
     'limpar-retorno'() {
         if (!confirm('Apagar o retorno colado e as contagens lidas? (os documentos ficam)')) return;
-        Object.assign(App.p.busca, { retorno: '', registroColado: [], notaRetorno: '' }); mudou();
+        Object.assign(App.p.busca, { retorno: '', registroColado: [], notaRetorno: '', analise: { diferenciais: [], ameacas: [], lacunas: [], recomendacoes: [], prazos: '', data: '' } }); mudou();
     },
     'add-registro'() { App.p.busca.registroColado.push({ id: uid(), base: 'inpi', consulta: '', n: '', triados: '' }); mudou(); },
     'tour'() { iniciarTour(true); },

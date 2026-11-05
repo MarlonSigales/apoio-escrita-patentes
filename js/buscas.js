@@ -184,14 +184,32 @@ const MD_FIXO = `## 2. BASES OBRIGATÓRIAS
 - Diferenciar o que foi lido (texto completo, reivindicações, descrição, resumo, só título).
 - Inferir situação legal pelo código de tipo (A2, B1, U2, Y1) e indicar que a vigência precisa ser conferida.
 
-## 4. O QUE ENTREGAR (relatório em PDF, com links clicáveis)
-- a) Registro da busca: base, data, estratégia, sequência exata, número de resultados e triados.
-- b) Tabela com 20 a 30 documentos: número com link, título, depositante, prioridade e publicação, país, situação legal, extensão da leitura e relevância 1–5.
-- c) Quadro comparativo dos 10 mais próximos × características do objeto (S/P/N/?).
-- d) Características possivelmente diferenciais e documentos que mais ameaçam novidade e atividade inventiva.
-- e) Lacunas e buscas a refazer manualmente.
-- f) Recomendações para o NIT e para um agente de propriedade industrial; modalidade provável (invenção ou modelo de utilidade).
-- g) Alerta de prazos: divulgações do grupo e período de graça de 12 meses (art. 12 da Lei 9.279/96).
+## 4. O QUE ENTREGAR — um único JSON (não gere PDF nem relatório em texto)
+Responda **somente** com um bloco \`\`\`json contendo um objeto no formato abaixo, sem texto antes ou depois. Ele é importado direto no app "Apoio à Escrita de Patentes" e vira o Formulário de Busca de Anterioridade e o relatório da busca; por isso **mantenha os nomes dos campos e os valores permitidos**. Campos sem informação: use "" ou [] (nunca invente). Datas em AAAA-MM-DD.
+
+\`\`\`json
+{
+  "formato": "apoio-escrita-patentes-busca",
+  "versao": 1,
+  "data_busca": "AAAA-MM-DD",
+  "registro": [
+    { "base": "inpi | google | espacenet | patentscope | uspto | scholar | scielo | capes | outra", "estrategia": "A | B | C | D | E | F | G", "consulta": "sequência exata usada", "resultados": 0, "triados": 0, "acessada": true, "obs": "ex.: bloqueio por CAPTCHA resolvido pelo usuário" }
+  ],
+  "documentos": [
+    { "numero": "BR 10 2016 023064 B1", "titulo": "", "depositante": "", "prioridade": "AAAA-MM-DD", "publicacao": "AAAA-MM-DD", "pais": "BR", "situacao": "vigente | extinta | em exame | sem entrada no Brasil | não verificada", "link": "https://...", "base": "inpi", "tipo": "Patente ou MU | Artigo ou Livro | Trabalho de Conclusão | Apresentação | Outro", "categoria": "X | Y | A | O | L", "relevancia": 1, "lido": "título | resumo | reivindicações | texto completo", "diferenca": "em que difere da invenção", "caracteristicas": { "C1": "S | P | N | ?" } }
+  ],
+  "anterioridades_encontradas": false,
+  "nota_explicativa": "conclusão curta: o que foi encontrado e em que a invenção se diferencia",
+  "diferenciais": ["característica que não aparece em nenhum documento"],
+  "ameacas": ["documento ou combinação que mais ameaça novidade/atividade inventiva"],
+  "lacunas": ["base não acessada, idioma não coberto, busca a refazer (com a sequência)"],
+  "recomendacoes": ["próximo passo para o NIT / agente de PI"],
+  "alerta_prazos": "divulgações do grupo e período de graça (art. 12 da Lei 9.279/96)"
+}
+\`\`\`
+- \`registro\`: uma linha por sequência executada em cada base (estratégias A–G), com o número de resultados e quantos foram triados; bases não acessadas entram com \`"acessada": false\` e a sequência pronta em \`consulta\`.
+- \`documentos\`: os 20 a 30 mais relevantes (relevância 1–5; categoria X = sozinho tira a novidade, Y = combinado com outro, A = estado geral da técnica). Em \`caracteristicas\`, use os códigos C1, C2… da lista do item 3.6 (S = divulga, P = parcialmente, N = não, ? = não verificado), ao menos para os 10 mais próximos.
+- Prefira o JSON também por economia: não repita textos longos nem copie resumos inteiros dos documentos.
 
 ## 5. REGRAS
 - Não inventar números de patente, datas, depositantes nem reivindicações; se não puder verificar, escrever "não verificado".
@@ -199,7 +217,7 @@ const MD_FIXO = `## 2. BASES OBRIGATÓRIAS
 - Não concluir sobre patenteabilidade: avaliação preliminar; a análise formal cabe a um profissional.
 - Material ou processo de fabricação isolado não é diferencial; avaliar geometria, princípio de funcionamento e efeito técnico.
 - Tratar divulgações anteriores da própria equipe como estado da técnica.
-- Responder em português, com tabelas e linguagem técnica clara.`;
+- Responder em português, somente com o JSON do item 4.`;
 
 function gerarMD(p) {
     const f = p.ficha, c = p.contexto;
@@ -233,6 +251,9 @@ ${classesBusca(p).length ? classesBusca(p).map(x => `- ${x} — ${tituloClasse(x
 ${fam}
 
 Depositantes e inventores a pesquisar (estratégia E): ${[p.busca.depositantes, c.depositante, c.inventores].filter(Boolean).join('; ').replace(/\n/g, '; ') || '{{EMPRESAS, UNIVERSIDADES, INVENTORES}}'}
+
+## 3.6 Características para o quadro comparativo (códigos usados no JSON)
+${caracteristicasComparacao(p).length ? caracteristicasComparacao(p).map((x, i) => `- **C${i + 1}:** ${x}`).join('\n') : '- {{características C1, C2… tiradas das reivindicações}}'}
 
 ${MD_FIXO}
 `;

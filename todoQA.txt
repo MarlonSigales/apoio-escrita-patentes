@@ -24,6 +24,8 @@ Atualizado em 04/11/2026 (versão 2).
   exemplo único (sistema de pressão).
 7 [resolvido 04/11/2026] "Começar do zero" apaga de verdade (localStorage e figuras no IndexedDB) e abre a ficha em branco;
   "Sua invenção" é a 1ª aba depois do Início e pré-preenche resumo, reivindicações e as demais abas.
+8 [resolvido 04/11/2026] O prompt de busca pede o retorno em JSON padronizado (apoio-escrita-patentes-busca v1), não em PDF;
+  o app importa o JSON (colado ou arquivo) direto no formulário e no relatório da busca; texto antigo continua aceito.
 2 [futuro] Ampliar o catálogo IPC/CPC (hoje ~80 classes, foco em agro, eletrônica e controle).
 3 [futuro] Ler PDF direto como fonte (hoje: copiar e colar o texto).
 4 [futuro] Nuvem da equipe (MEGA), como no Projeto Conceitual, com senha e dados resguardados.
