@@ -172,6 +172,45 @@ function ok(cond, nome) { RES.push([!!cond, nome]); }
       let erro = ''; try { aplicarRespostaIdeia(q, '{"formato":"apoio-escrita-patentes-busca"}'); } catch (e) { erro = e.message; }
       ok(/não achei o JSON/.test(erro), 'JSON de outro formato é recusado');
       ok(normalizarPedido({ titulo: 'x' }).ideia.rodadas.length === 0, 'pedido antigo ganha o campo da ideia'); }
+    // importar .docx já feito: cada documento volta para o seu lugar (ida e volta com os documentos do próprio app)
+    { const ex = exemploPressao();
+      for (const [k, d] of ex.desenhos.entries()) { const cv = document.createElement('canvas'); cv.width = 400; cv.height = 250; const c = cv.getContext('2d'); c.fillStyle = '#fff'; c.fillRect(0, 0, 400, 250); c.fillStyle = '#000'; c.fillRect(40 + k * 50, 40, 120, 80); d.img = await Imagens.guardar(await new Promise(r => cv.toBlob(r, 'image/png'))); }
+      ex.universidade.memorando.numero = '12'; ex.universidade.memorando.data = '2026-11-10';
+      ex.universidade.contexto = 'Contexto de teste do formulário.'; ex.universidade.areasAbrangidas = ['Eng. Agrícola', 'Eng. Elétrica']; ex.universidade.areaPredominante = 'ELETRÔNICA';
+      ex.universidade.inventores = [Object.assign(inventorVazio(), { nome: 'Inventora Teste Um', cpf: '000.000.000-00', email: 'um@teste.com', endereco: 'Rua A, 1', cidade: 'Pelotas', uf: 'RS', percentual: '60', notificante: true, qualificacao: 'Aluno Mestrando' }), Object.assign(inventorVazio(), { nome: 'Inventor Teste Dois', percentual: '30' })];
+      ex.universidade.colaboradores = [Object.assign(inventorVazio(), { nome: 'Colaborador Teste', inventor: false, percentual: '10' })];
+      ex.contexto.divulgacoes = [{ id: 'd1', data: '2026-03-02', meio: 'Congresso X' }]; ex.revisao.semDivulgacao = false;
+      const vazio = () => normalizarPedido(pedidoVazio());
+      const ler = async (doc, id) => lerDocumentoDocx(await gerarDocumento(ex, doc), id);
+      let q = vazio(); await aplicarDocumentoDocx(q, await ler('relatorio', 'relatorio'), 'completar');
+      ok(q.relatorio.campo && q.relatorio.descricao === ex.relatorio.descricao && q.relatorio.exemplos === ex.relatorio.exemplos && q.titulo.toLowerCase() === tituloPedido(ex).toLowerCase(), 'importar relatório: seções nos lugares certos');
+      q = vazio(); await aplicarDocumentoDocx(q, await ler('reivindicacoes', 'reivindicacoes'), 'completar');
+      const rx = ex.reivindicacoes.filter(r => r.texto.trim());
+      ok(q.reivindicacoes.length === rx.length && q.reivindicacoes.every((r, i) => r.texto === semFinal(rx[i].texto) && (r.dep || null) === (rx[i].dep || null)), 'importar reivindicações: texto e dependência');
+      q = vazio(); await aplicarDocumentoDocx(q, await ler('resumo', 'resumo'), 'completar');
+      ok(q.resumo === ex.resumo, 'importar resumo');
+      q = vazio(); q.relatorio.desenhos = ex.relatorio.desenhos; await aplicarDocumentoDocx(q, await ler('desenhos', 'desenhos'), 'completar'); completarFichaImportada(q);
+      ok(q.desenhos.length === ex.desenhos.length && q.desenhos.every(d => d.img && d.legenda && Array.isArray(d.elementos)), 'importar desenhos: figuras editáveis com imagem e legenda (' + q.desenhos.map(d => !!d.img).join() + ')');
+      // pedido inteiro num arquivo só, em outra ordem, com o título "RELATÓRIO DESCRITIVO"
+      const des = await imagensDesenhos(ex);
+      const unico = await montarDocx({ titulo: 'Pedido', imagens: des.imgs, blocos: [T('RESUMO', { b: true }), T(tituloPedido(ex)), ...paragrafos(ex.resumo).map(x => T(x)), T('RELATÓRIO DESCRITIVO', { b: true }), ...blocosRelatorio(ex), T('REIVINDICAÇÕES', { b: true }), ...rx.map((r, i) => T(`${i + 1}.\t${textoReivindicacao(ex, r)}`)), ...des.blocos] });
+      q = vazio(); const lu = await lerDocumentoDocx(unico, 'pedido'); const fu = await aplicarDocumentoDocx(q, lu, 'completar'); completarFichaImportada(q);
+      ok(lu.ocupa.length === 4 && q.resumo === ex.resumo && q.relatorio.descricao === ex.relatorio.descricao && q.reivindicacoes.length === rx.length && q.desenhos.length === ex.desenhos.length && q.desenhos.every(d => d.img && d.legenda), 'pedido inteiro num .docx só: cada parte no seu lugar (' + fu.length + ' itens)');
+      q.resumo = 'texto meu'; await aplicarDocumentoDocx(q, lu, 'completar'); ok(q.resumo === 'texto meu', 'importar (completar) não apaga');
+      await aplicarDocumentoDocx(q, lu, 'substituir'); ok(q.resumo === ex.resumo, 'importar (substituir) troca');
+      ok(JSON.stringify(legendasDaBreveDescricao('A FIGURA 1 ilustra a vista A. A FIGURA 2 mostra o corte; e a FIGURA 3 é o circuito.')) === JSON.stringify({ 1: 'ilustra a vista A', 2: 'mostra o corte', 3: 'ilustra o circuito' }), 'legendas tiradas da breve descrição');
+      // formulários
+      q = vazio(); const lm = await lerDocumentoDocx(await gerarDocumento(ex, 'memorando'), 'pedido'); await aplicarDocumentoDocx(q, lm, 'completar');
+      ok(lm.id === 'memorando' && q.universidade.memorando.numero === '12' && q.universidade.memorando.data === '2026-11-10', 'importar memorando (reconhecido sozinho)');
+      q = vazio(); const li = await lerDocumentoDocx(await gerarDocumento(ex, 'infotec'), 'pedido'); await aplicarDocumentoDocx(q, li, 'completar');
+      const u = q.universidade;
+      ok(li.id === 'infotec' && u.areaPredominante === 'ELETRÔNICA' && u.areasAbrangidas.join() === 'Eng. Agrícola,Eng. Elétrica' && u.contexto === 'Contexto de teste do formulário.' && u.consiste === ex.universidade.consiste, 'importar informação tecnológica: áreas, consiste e textos');
+      ok(u.inventores.length === 2 && u.inventores[0].cpf === '000.000.000-00' && u.inventores[0].cidade === 'Pelotas' && u.inventores[0].percentual === '60' && u.inventores[0].notificante && u.inventores[0].qualificacao === 'Aluno Mestrando' && u.colaboradores.length === 1 && u.colaboradores[0].percentual === '10' && q.contexto.divulgacoes.length === 1, 'importar informação tecnológica: inventores, % e divulgação');
+      q = vazio(); const lb = await lerDocumentoDocx(await gerarDocumento(ex, 'relbusca'), 'relbusca'); await aplicarDocumentoDocx(q, lb, 'completar');
+      const comNum = ex.busca.resultados.filter(r => r.num);
+      ok(q.busca.resultados.length === comNum.length && q.busca.resultados.every(r => comNum.some(x => mesmoDocumento(x.num, r.num))), 'importar relatório da busca: documentos (' + q.busca.resultados.length + '/' + comNum.length + ')');
+      const lf = await lerDocumentoDocx(await gerarDocumento(ex, 'formbusca'), 'pedido'); const nAntes = q.busca.resultados.length; await aplicarDocumentoDocx(q, lf, 'completar');
+      ok(lf.id === 'formbusca' && q.busca.resultados.length === nAntes && q.busca.registroColado.length > 0, 'importar formulário de busca sem duplicar documentos'); }
     for (const d of DOCUMENTOS) {
         const b = await gerarDocumento(p, d.id);
         const z = await JSZip.loadAsync(b);

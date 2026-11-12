@@ -17,7 +17,11 @@ local, com `python3 -m http.server`.
    preencher só o vazio ou aplicar as melhorias (dá para desfazer). Responda às perguntas e repita: a cada rodada o prompt leva o
    pedido já melhorado. O prompt pede proteção ampla sem entregar o produto inteiro (o know-how dispensável fica fora e é listado
    para guardar em sigilo), respeitando a descrição suficiente exigida pelo art. 24 da Lei 9.279/96.
-3. **Depois, a ficha "Sua invenção".** É a primeira aba depois do Início e reúne tudo do "Entenda" do guia do INPI: a escolha **PI ou MU** (feita num só lugar, valendo para o pedido todo), o teste para quem está em dúvida, as **divulgações** com o prazo de 12 meses e o que o INPI exige. Dela saem os rascunhos do **resumo** e das **reivindicações**.
+3. **Já tem o pedido em Word?** Em "📥 Importar o pedido já feito em Word" (página inicial), escolha um .docx com tudo ou os
+   documentos separados: cada parte vai para o seu lugar e as figuras viram células editáveis. Cada página de documento também
+   tem "⇪ Importar .docx" (inclusive memorando, formulários da universidade e relatório da busca), ao lado do "⬇ Baixar .docx".
+   No editor de figuras, a ferramenta ⬚ seleciona uma área e move aquela parte, como no Paint.
+4. **Depois, a ficha "Sua invenção".** É a primeira aba depois do Início e reúne tudo do "Entenda" do guia do INPI: a escolha **PI ou MU** (feita num só lugar, valendo para o pedido todo), o teste para quem está em dúvida, as **divulgações** com o prazo de 12 meses e o que o INPI exige. Dela saem os rascunhos do **resumo** e das **reivindicações**.
    Quem já tem o resumo e as reivindicações escritos pode colá-los: o app completa a ficha a partir deles. Juntos, eles pré-preenchem, em cadeia:
    - a ficha (campo, solução, componentes numerados, vantagens, aplicações);
    - os termos e as classes da busca;
@@ -26,10 +30,10 @@ local, com `python3 -m http.server`.
    - os formulários da universidade.
 
    Tudo isso só preenche o que está vazio e cada campo uma única vez: se o aluno apagar, o app não preenche de novo.
-4. **Caderno de fontes, como o NotebookLM.** Você junta TCC, artigos e relatórios (.docx, .txt, .md ou texto colado). O app resume cada
+5. **Caderno de fontes, como o NotebookLM.** Você junta TCC, artigos e relatórios (.docx, .txt, .md ou texto colado). O app resume cada
    fonte, responde perguntas com trechos citados [1], [2]… e insere o trecho no campo em edição. Há também um pacote para IA:
    você copia o pedido, cola numa IA e cola a resposta de volta.
-5. **Busca de anterioridade: primeiro o prompt e o retorno colado, depois o que for à mão.** A etapa segue esta ordem:
+6. **Busca de anterioridade: primeiro o prompt e o retorno colado, depois o que for à mão.** A etapa segue esta ordem:
    1. Termos.
    2. **Prompt gerado** para uma IA com navegador. O prompt manda a IA parar e pedir ao usuário que resolva CAPTCHAs e logins manualmente.
       O retorno é pedido **em JSON** num formato fixo (`"formato": "apoio-escrita-patentes-busca"`), e não em PDF. Assim a IA gasta menos créditos e o app importa sem erro.
@@ -47,16 +51,16 @@ local, com `python3 -m http.server`.
    Com isso, gera as estratégias A–G para INPI (pePI), Google Patents, Espacenet, PATENTSCOPE, USPTO, Google Acadêmico e SciELO.
    Cada estratégia tem a sequência pronta para copiar, um link e o registro de resultados. O app também gera de volta o prompt `.md` preenchido, que diz
    à IA para **parar e pedir ao usuário que resolva CAPTCHAs e logins manualmente**.
-6. **Classificação por aproximação.** O app compara as palavras da ficha com um catálogo resumido da IPC/CPC e marca as classes
+7. **Classificação por aproximação.** O app compara as palavras da ficha com um catálogo resumido da IPC/CPC e marca as classes
    mais próximas, mostrando a % de semelhança e o porquê. O aluno confere cada classe no navegador CPC do Espacenet antes de usar.
-7. **Reivindicações em 4 campos.** Cada reivindicação é montada assim:
+8. **Reivindicações em 4 campos.** Cada reivindicação é montada assim:
    1. o título, ou uma parte dele, escolhida numa lista com as partes do título;
    2. "de acordo com a reivindicação N", só nas dependentes;
    3. a palavra-chave "caracterizado por", que vira "caracterizada por" quando o título é feminino; também dá para escolher "…pelo fato de";
    4. a característica.
 
    Há botões "＋ Independente", "＋ Dependente" e "＋ Dependente desta". A numeração e as dependências se ajustam ao inserir, subir ou remover uma reivindicação, e a prévia da frase atualiza enquanto o aluno digita.
-8. **Regras do INPI verificadas.** O app confere estes pontos:
+9. **Regras do INPI verificadas.** O app confere estes pontos:
    - o título é o mesmo em todos os documentos;
    - as reivindicações usam "caracterizado por" e cada uma é uma única frase;
    - o modelo de utilidade tem uma só reivindicação independente;
@@ -64,7 +68,7 @@ local, com `python3 -m http.server`.
    - os números de referência batem entre os documentos;
    - os desenhos existem (obrigatórios para MU);
    - o período de graça de 12 meses é respeitado.
-9. **Os 8 documentos no fim**, todos em Word (.docx):
+10. **Os 8 documentos no fim**, todos em Word (.docx):
 
    | # | Documento | Para |
    |---|-----------|------|

@@ -2,7 +2,7 @@
 
 TODO / QA — Apoio à Escrita de Patentes
 Marcadores: [fazer] [futuro] [resolvido] [rejeitado]
-Atualizado em 12/11/2026 (versão 3).
+Atualizado em 12/11/2026 (versão 4).
 
 === DIRETRIZES PERMANENTES
 - SIMPLES PARA QUALQUER ALUNO: quem nunca escreveu patente consegue usar sem manual. Antes de fechar um item: (1) dá para fazer
@@ -44,6 +44,16 @@ Atualizado em 12/11/2026 (versão 3).
    O prompt pede proteção ampla sem entregar o produto inteiro (termos genéricos, alternativas, cascata de dependentes,
    know-how dispensável fora), respeitando a suficiência do art. 24 da LPI. Missões +30 XP e medalha "Parceria com a IA".
 15 [resolvido 12/11/2026] "Comece rápido" no topo da página inicial, logo abaixo do título.
+16 [resolvido 12/11/2026] Importar .docx já feito (js/importar.js): o pedido inteiro num arquivo só (RELATÓRIO DESCRITIVO,
+   REIVINDICAÇÕES, DESENHOS, RESUMO em qualquer ordem) ou um arquivo por documento; figuras na ordem do Word viram células
+   editáveis (imagem de fundo) com legendas tiradas da breve descrição; parágrafos quebrados no Word são juntados;
+   componentes e ficha completados. Substituir ou só completar, com "↶ Desfazer importação".
+17 [resolvido 12/11/2026] Importar cada documento na própria página (relatório, reivindicações, desenhos, resumo, memorando,
+   informação tecnológica com inventores e %, formulário de busca, relatório da busca) e na Entrega; vários arquivos de uma vez
+   são reconhecidos pelo cabeçalho.
+18 [resolvido 12/11/2026] Editor de figuras: ferramenta ⬚ "Selecionar área" (como no Paint) — marca, arrasta a parte da imagem
+   e os elementos de dentro; Delete apaga a área (branco); Esc solta; Ctrl+Z desfaz (o desfazer guarda também a imagem).
+19 [resolvido 12/11/2026] Baixar um documento só pelo menu ▾ ao lado de "⬇ 8 documentos" (além dos botões de cada página).
 2 [futuro] Ampliar o catálogo IPC/CPC (hoje ~80 classes, foco em agro, eletrônica e controle).
 3 [futuro] Ler PDF direto como fonte (hoje: copiar e colar o texto).
 4 [futuro] Nuvem da equipe (MEGA), como no Projeto Conceitual, com senha e dados resguardados.
@@ -53,3 +63,10 @@ Atualizado em 12/11/2026 (versão 3).
 - tests/testes.html: 83 de 83 (19 novos da ideia: prompt sem dados pessoais, só-vazio não apaga, modo melhorar, rodada 2,
   classes do catálogo e fora dele, numeração [0001] retirada, formato errado recusado).
 - Playwright 360/768/1024/1920: sem estouro e sem erro; copiar → colar JSON → aplicar → rodada 2 → desfazer.
+
+=== QA (12/11/2026, versão 4)
+- tests/testes.html: 96 de 96 (13 novos: ida e volta dos 8 documentos, pedido num .docx só, completar × substituir,
+  legendas da breve descrição, reconhecimento dos formulários).
+- Importação real de 4 .docx (Relatório, Reivindicações, Desenhos com 4 figuras, Resumo): tudo no lugar, 4 figuras
+  editáveis com legenda, 10 componentes; seleção de área movendo a imagem; Ctrl+Z; menu de um documento; desfazer importação;
+  sem estouro em 360 e 768 px.

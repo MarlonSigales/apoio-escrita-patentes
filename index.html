@@ -8,8 +8,8 @@
     <meta name="description" content="Escreva seu pedido de patente passo a passo (Guia Básico do INPI), com buscas de anterioridade, classificação por aproximação, caderno de fontes e os 8 documentos prontos para a universidade e o INPI.">
     <link rel="icon" type="image/png" href="img/icone-instagri.png">
     <link rel="apple-touch-icon" href="img/icone-instagri-180.png">
-    <link rel="stylesheet" href="css/style.css?v=20261112b">
-    <link rel="stylesheet" href="css/patentes.css?v=20261112b">
+    <link rel="stylesheet" href="css/style.css?v=20261112c">
+    <link rel="stylesheet" href="css/patentes.css?v=20261112c">
 </head>
 <body>
     <header class="topbar">
@@ -22,7 +22,8 @@
         <span class="xp-topo" id="xp-topo"></span>
         <span class="topbar-selo" id="topbar-selo" title="Os dados ficam guardados neste navegador">guardado no navegador</span>
         <button type="button" class="btn btn-secondary topbar-caderno" data-acao="abrir-caderno" title="Perguntar às suas fontes">📚 Caderno</button>
-        <button type="button" class="btn btn-primary topbar-zip" data-acao="baixar-tudo" title="Baixar os 8 documentos e o projeto">⬇ 8 documentos</button>
+        <div class="topbar-docs"><button type="button" class="btn btn-primary topbar-zip" data-acao="baixar-tudo" title="Baixar os 8 documentos e o projeto">⬇ 8 documentos</button>
+            <details class="menu-docs"><summary class="btn btn-primary" title="Baixar um documento só">▾</summary><div class="menu-docs-lista"><small>Baixar um documento (.docx)</small><button type="button" data-acao="baixar-doc" data-doc="relatorio">1. Relatório Descritivo</button><button type="button" data-acao="baixar-doc" data-doc="reivindicacoes">2. Reivindicações</button><button type="button" data-acao="baixar-doc" data-doc="desenhos">3. Desenhos</button><button type="button" data-acao="baixar-doc" data-doc="resumo">4. Resumo</button><button type="button" data-acao="baixar-doc" data-doc="memorando">5. Memorando</button><button type="button" data-acao="baixar-doc" data-doc="infotec">6. Informação Tecnológica</button><button type="button" data-acao="baixar-doc" data-doc="formbusca">7. Formulário de Busca</button><button type="button" data-acao="baixar-doc" data-doc="relbusca">8. Relatório da busca</button></div></details></div>
     </header>
 
     <div class="app-corpo">
@@ -38,7 +39,7 @@
                     <div>
                         <button type="button" class="sidebar-arquivo-link" data-acao="abrir">📂 Abrir ZIP baixado antes</button>
                         <button type="button" class="sidebar-arquivo-link" data-acao="importar-md">⇪ Importar prompt de busca (.md)</button>
-                        <button type="button" class="sidebar-arquivo-link" data-acao="importar-docx">📄 Importar pedido em Word (.docx)</button>
+                        <button type="button" class="sidebar-arquivo-link" data-acao="importar-docx">📄 Importar documentos em Word (.docx)</button>
                         <button type="button" class="sidebar-arquivo-link" data-acao="exemplo" data-ex="pressao">🧪 Exemplo completo</button>
                         <button type="button" class="sidebar-arquivo-link" data-acao="novo">🗑️ Começar do zero (apagar tudo)</button>
                         <button type="button" class="sidebar-arquivo-link" data-acao="tour">❓ Como usar (tour)</button>
@@ -76,19 +77,20 @@
     <input type="file" id="arq" hidden>
 
     <script src="lib/jszip.min.js"></script>
-    <script src="js/dados.js?v=20261112b"></script>
-    <script src="js/ipc.js?v=20261112b"></script>
-    <script src="js/buscas.js?v=20261112b"></script>
-    <script src="js/fontes.js?v=20261112b"></script>
-    <script src="js/redacao.js?v=20261112b"></script>
-    <script src="js/preenche.js?v=20261112b"></script>
-    <script src="js/simbolos.js?v=20261112b"></script>
-    <script src="js/desenho.js?v=20261112b"></script>
-    <script src="js/documentos.js?v=20261112b"></script>
-    <script src="js/jogo.js?v=20261112b"></script>
-    <script src="js/ideia.js?v=20261112b"></script>
-    <script src="js/exemplo.js?v=20261112b"></script>
-    <script src="js/etapas.js?v=20261112b"></script>
-    <script src="js/app.js?v=20261112b"></script>
+    <script src="js/dados.js?v=20261112c"></script>
+    <script src="js/ipc.js?v=20261112c"></script>
+    <script src="js/buscas.js?v=20261112c"></script>
+    <script src="js/fontes.js?v=20261112c"></script>
+    <script src="js/redacao.js?v=20261112c"></script>
+    <script src="js/preenche.js?v=20261112c"></script>
+    <script src="js/simbolos.js?v=20261112c"></script>
+    <script src="js/desenho.js?v=20261112c"></script>
+    <script src="js/documentos.js?v=20261112c"></script>
+    <script src="js/jogo.js?v=20261112c"></script>
+    <script src="js/ideia.js?v=20261112c"></script>
+    <script src="js/importar.js?v=20261112c"></script>
+    <script src="js/exemplo.js?v=20261112c"></script>
+    <script src="js/etapas.js?v=20261112c"></script>
+    <script src="js/app.js?v=20261112c"></script>
 </body>
 </html>

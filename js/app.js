@@ -255,31 +255,40 @@ const ACOES = {
         avisar(feito.length ? 'Preenchido pelo .md: ' + feito.slice(0, 8).join(', ') + (feito.length > 8 ? '…' : '') : 'Nada novo no .md (só preencho o que está vazio).', 'ok', 7000);
         mudou();
     },
-    'importar-docx': async () => {
-        const arqs = await escolherArquivo('.docx', true);
-        const feito = [];
+    'importar-docx'() { return ACOES['importar-doc']({ dataset: { doc: 'pedido' } }); },
+    'importar-doc': async (el) => {
+        const id = el.dataset.doc || 'pedido';
+        const arqs = await escolherArquivo('.docx', id === 'pedido');
+        if (!arqs.length) return;
+        const lidos = [];
         for (const a of arqs) {
-            try {
-                const texto = await textoDocx(a);
-                const r = lerPedidoExistente(texto), p = App.p;
-                if (r.titulo && !p.titulo) p.titulo = r.titulo.charAt(0) + r.titulo.slice(1).toLowerCase();
-                if (r.tipo === 'relatorio') { for (const k of Object.keys(p.relatorio)) if (r.relatorio[k] && !p.relatorio[k]) p.relatorio[k] = r.relatorio[k]; if (/modelo de utilidade/i.test(texto) && !p.natureza) p.natureza = 'MU'; if (/patente de inven/i.test(texto) && !p.natureza) p.natureza = 'PI'; }
-                if (r.tipo === 'reivindicacoes' && !p.reivindicacoes.length) p.reivindicacoes = r.reivindicacoes.map(x => ({ id: uid(), preambulo: '', expressao: '', ...x }));
-                if (r.tipo === 'resumo' && !p.resumo) { p.resumo = r.resumo; if (r.figuraResumo) p.figuraResumo = r.figuraResumo; }
-                if (r.tipo === 'desenhos') while (p.desenhos.length < r.figuras) p.desenhos.push({ id: uid(), legenda: '', img: '' });
-                if (r.tipo === 'desenhos') { const z = await JSZip.loadAsync(a); const imgs = Object.keys(z.files).filter(n => /^word\/media\//.test(n)).sort(); for (let i = 0; i < imgs.length && i < p.desenhos.length; i++) if (!p.desenhos[i].img) { const bl = new Blob([await z.file(imgs[i]).async('uint8array')], { type: /png$/i.test(imgs[i]) ? 'image/png' : 'image/jpeg' }); p.desenhos[i].img = await Imagens.guardar(bl); await ajustarTamanhoPelaImagem(p.desenhos[i], bl); } }
-                p.fontes.push({ id: uid(), nome: a.name, tipo: 'docx', texto, data: hojeISO(), ativa: true });
-                feito.push(r.tipo);
-            } catch (e) { avisar(a.name + ': ' + e.message, 'erro', 6000); }
+            try { lidos.push(Object.assign(await lerDocumentoDocx(a, id), { nome: a.name })); }
+            catch (e) { avisar(`${a.name}: ${e.message}`, 'erro', 8000); }
         }
-        const p = App.p;
-        if (!p.ficha.componentes.length) p.ficha.componentes = componentesDoTexto(Object.values(p.relatorio).join(' ') + ' ' + p.resumo);
-        if (!p.ficha.campo && p.relatorio.campo) p.ficha.campo = p.relatorio.campo.replace(/^O objeto do presente pedido de [^,]+? trata-se de /i, '');
-        if (!p.ficha.problema && p.relatorio.problemaSolucao) p.ficha.problema = paragrafos(p.relatorio.problemaSolucao)[0];
-        if (!p.ficha.solucao && p.relatorio.descricao) p.ficha.solucao = paragrafos(p.relatorio.descricao)[0];
-        if (!p.ficha.estadoTecnica && p.relatorio.fundamentos) p.ficha.estadoTecnica = paragrafos(p.relatorio.fundamentos)[0];
-        if (feito.length) avisar('Lido: ' + feito.join(', ') + '. Confira a ficha e os componentes.', 'ok', 6000);
+        if (!lidos.length) return;
+        const ocupados = [...new Set(lidos.flatMap(l => importacaoSobrescreve(App.p, l)))];
+        let modo = 'completar';
+        if (ocupados.length) modo = confirm(`Já há conteúdo em: ${ocupados.map(k => NOMES_IMPORT[k]).join(', ')}.\n\nOK = substituir pelo que está no arquivo\nCancelar = só completar o que está vazio\n\n(Dá para desfazer.)`) ? 'substituir' : 'completar';
+        DesfazerImport.guardar(JSON.parse(JSON.stringify(App.p)));
+        const feito = [], ordem = ['pedido', 'relatorio', 'reivindicacoes', 'desenhos', 'resumo', 'memorando', 'infotec', 'formbusca', 'relbusca'];
+        lidos.sort((a, b) => ordem.indexOf(a.ocupa.length > 1 ? 'pedido' : a.ocupa[0]) - ordem.indexOf(b.ocupa.length > 1 ? 'pedido' : b.ocupa[0]));   // relatório antes: dá as legendas e os componentes
+        for (const l of lidos) {
+            try {
+                const f = await aplicarDocumentoDocx(App.p, l, modo);
+                feito.push(...f);
+                App.p.fontes.push({ id: uid(), nome: l.nome, tipo: 'docx', texto: l.est.linhas.map(x => x.texto).filter(Boolean).join('\n'), data: hojeISO(), ativa: false });
+            } catch (e) { avisar(`${l.nome}: ${e.message}`, 'erro', 8000); }
+        }
+        if (lidos.some(l => l.ocupa.some(k => ['relatorio', 'reivindicacoes', 'desenhos', 'resumo'].includes(k)))) feito.push(...completarFichaImportada(App.p));
+        App.placar = null;
+        avisar(feito.length ? `Importado (${lidos.map(l => NOMES_IMPORT[l.id === 'pedido' ? (l.ocupa.length === 1 ? l.ocupa[0] : 'pedido') : l.id]).join(', ')}): ${feito.slice(0, 10).join(', ')}${feito.length > 10 ? '…' : ''}` : 'Nada novo para preencher (escolha "substituir" para trocar o que já existe).', feito.length ? 'ok' : 'aviso', 9000);
         mudou();
+    },
+    'desfazer-importacao'() {
+        if (!confirm('Voltar o pedido para antes da última importação?')) return;
+        const ant = DesfazerImport.tirar();
+        if (!ant) return avisar('Não há importação para desfazer.', 'erro');
+        App.p = ant; App.placar = null; avisar('Importação desfeita.'); mudou();
     },
     'exemplo': async (el) => {
         if (temConteudo() && !confirm('Trocar o pedido atual pelo exemplo? (baixe o ZIP antes se quiser guardar)')) return;
@@ -291,7 +300,7 @@ const ACOES = {
     'novo': async () => {
         if (temConteudo() && !confirm('Apagar tudo e começar do zero? O pedido atual, as fontes e as figuras serão apagados deste navegador (baixe o ZIP antes se quiser guardar).')) return;
         clearTimeout(App._t); clearTimeout(App._tp);
-        Armazem.apagar(); DesfazerIdeia.limpar();
+        Armazem.apagar(); DesfazerIdeia.limpar(); DesfazerImport.limpar();
         await Imagens.limpar();
         App.p = normalizarPedido(pedidoVazio());
         Armazem.salvar(App.p);
@@ -374,7 +383,9 @@ const ACOES = {
         if (!(d.elementos || []).length) await ajustarTamanhoPelaImagem(d, a);
         mudou();
     },
-    'fig-tool'(el) { Ed.tool[el.dataset.fig] = el.dataset.tool; if (el.dataset.tool !== 'sel') Ed.sel[el.dataset.fig] = null; marcarFerramenta(el.dataset.fig); redesenhar(el.dataset.fig); },
+    'fig-tool'(el) { Ed.tool[el.dataset.fig] = el.dataset.tool; if (el.dataset.tool !== 'sel') Ed.sel[el.dataset.fig] = null; if (el.dataset.tool !== 'area') Ed.area[el.dataset.fig] = null; marcarFerramenta(el.dataset.fig); redesenhar(el.dataset.fig); },
+    'fig-area-apagar'(el) { apagarArea(el.dataset.fig); },
+    'fig-area-soltar'(el) { soltarArea(el.dataset.fig); },
     'fig-apagar'(el) { apagarSelecionado(el.dataset.fig); },
     'fig-simbolo'(el) { const id = el.dataset.fig; Ed.tool[id] = 'sim'; Ed.forma[id] = el.dataset.forma; Ed.sel[id] = null; marcarFerramenta(id); redesenhar(id); },
     'fig-girar'(el) { girarSelecionado(el.dataset.fig); },

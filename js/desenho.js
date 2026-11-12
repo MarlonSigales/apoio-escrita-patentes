@@ -15,11 +15,12 @@
 const FIG_PADRAO = { w: 1000, h: 600 };
 const FIG_TOOLS = [
     ['sel', '🖐️', 'Selecionar e mover (arraste as pontas para girar a seta)'],
+    ['area', '⬚', 'Selecionar uma área e mover (como no Paint): arraste para marcar e depois arraste a área. Move a parte da imagem e o que estiver dentro. Delete apaga a área; Esc solta'],
     ['seta', '➘', 'Seta numerada: arraste da peça até onde o número deve ficar'],
     ['ligacao', '⤳', 'Ligação: fluxo, fio, tubulação ou sinal (estilo, pontas e cotovelo no painel). Encaixa nos terminais dos símbolos'],
     ['ret', '▭', 'Retângulo'], ['elipse', '◯', 'Elipse'], ['linha', '╱', 'Linha'], ['texto', 'T', 'Texto (traduzível)']
 ];
-const Ed = { tool: {}, num: {}, sel: {}, drag: null, desfazer: {}, url: {}, forma: {}, grade: {}, lig: {} };
+const Ed = { tool: {}, num: {}, sel: {}, drag: null, desfazer: {}, url: {}, forma: {}, grade: {}, lig: {}, area: {} };
 const ehCaixa = e => e.t === 'ret' || e.t === 'elipse' || e.t === 'sim';
 const ehTraco = e => e.t === 'seta' || e.t === 'linha' || e.t === 'ligacao';
 function passoGrade(d) { return Math.max(5, Math.round(d.w / 100)); }
@@ -206,8 +207,59 @@ function svgFigura(p, d, urlFundo, comAlcas) {
         `<rect x="0" y="0" width="${d.w}" height="${d.h}" fill="#fff"/>` +
         (comAlcas && Ed.grade[d.id] !== false ? `<defs><pattern id="grade-${d.id}" width="${passoGrade(d) * 2}" height="${passoGrade(d) * 2}" patternUnits="userSpaceOnUse"><circle cx="0.8" cy="0.8" r="0.8" fill="#c9d6d2"/></pattern></defs><rect x="0" y="0" width="${d.w}" height="${d.h}" fill="url(#grade-${d.id})" pointer-events="none"/>` : '') +
         (urlFundo ? `<image href="${urlFundo}" x="0" y="0" width="${d.w}" height="${d.h}" preserveAspectRatio="xMidYMid meet"/>` : '') +
-        (d.elementos || []).map(e => svgElemento(p, d, e, comAlcas)).join('') + '</svg>';
+        (d.elementos || []).map(e => svgElemento(p, d, e, comAlcas)).join('') + (comAlcas ? svgArea(d, urlFundo) : '') + '</svg>';
 }
+
+// ------------------------------------------------------------ seleção de área (como no Paint)
+/** A área marcada; enquanto é arrastada, a parte da imagem aparece no destino e o lugar de origem fica branco. */
+function svgArea(d, urlFundo) {
+    const a = Ed.area[d.id]; if (!a || (!a.w && !a.h)) return '';
+    const r = retArea(a), dx = a.dx || 0, dy = a.dy || 0;
+    let s = '';
+    if ((dx || dy) && urlFundo) s += `<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" fill="#fff"/><svg x="${r.x + dx}" y="${r.y + dy}" width="${r.w}" height="${r.h}" viewBox="${r.x} ${r.y} ${r.w} ${r.h}" overflow="hidden"><image href="${urlFundo}" x="0" y="0" width="${d.w}" height="${d.h}" preserveAspectRatio="xMidYMid meet"/></svg>`;
+    return s + `<rect class="area-sel" data-area="1" x="${r.x + dx}" y="${r.y + dy}" width="${r.w}" height="${r.h}"/>`;
+}
+function retArea(a) { return { x: Math.min(a.x, a.x + a.w), y: Math.min(a.y, a.y + a.h), w: Math.abs(a.w), h: Math.abs(a.h) }; }
+function dentroArea(r, q) { return q.x >= r.x && q.x <= r.x + r.w && q.y >= r.y && q.y <= r.y + r.h; }
+/** Elementos inteiramente dentro da área (andam junto com ela). */
+function elementosNaArea(d, r) {
+    return (d.elementos || []).filter(e => {
+        const pts = 'x1' in e ? [{ x: e.x1, y: e.y1 }, { x: e.x2, y: e.y2 }] : 'w' in e ? [{ x: e.x, y: e.y }, { x: e.x + e.w, y: e.y + e.h }] : [{ x: e.x, y: e.y }];
+        return pts.every(q => dentroArea(r, q));
+    });
+}
+/** Recorta a área da imagem de fundo e cola deslocada (dx, dy em unidades da figura); com dx = dy = null, só apaga (branco). */
+async function moverAreaImagem(d, r, dx, dy) {
+    const blob = d.img ? await Imagens.ler(d.img) : null;
+    if (!blob) return false;
+    const url = URL.createObjectURL(blob);
+    try {
+        const img = await new Promise((ok, erro) => { const i = new Image(); i.onload = () => ok(i); i.onerror = erro; i.src = url; });
+        const nw = img.naturalWidth || d.w, nh = img.naturalHeight || d.h;
+        const k = Math.min(d.w / nw, d.h / nh), ox = (d.w - nw * k) / 2, oy = (d.h - nh * k) / 2;   // preserveAspectRatio meet
+        const sx = Math.round((r.x - ox) / k), sy = Math.round((r.y - oy) / k), sw = Math.round(r.w / k), sh = Math.round(r.h / k);
+        const cv = document.createElement('canvas'); cv.width = nw; cv.height = nh;
+        const c = cv.getContext('2d'); c.fillStyle = '#fff'; c.fillRect(0, 0, nw, nh); c.drawImage(img, 0, 0);
+        const pedaco = document.createElement('canvas'); pedaco.width = Math.max(1, sw); pedaco.height = Math.max(1, sh);
+        pedaco.getContext('2d').drawImage(cv, sx, sy, sw, sh, 0, 0, sw, sh);
+        c.fillStyle = '#fff'; c.fillRect(sx, sy, sw, sh);
+        if (dx !== null) c.drawImage(pedaco, Math.round(sx + dx / k), Math.round(sy + dy / k));
+        const novo = await new Promise(ok => cv.toBlob(ok, 'image/png'));
+        d.img = await Imagens.guardar(novo);
+        return true;
+    } finally { URL.revokeObjectURL(url); }
+}
+/** Apaga a área marcada: a parte da imagem fica branca e os elementos de dentro saem. */
+async function apagarArea(id) {
+    const d = figura(id), a = Ed.area[id]; if (!d || !a) return;
+    const r = retArea(a); if (r.w < 2 || r.h < 2) return;
+    guardarDesfazer(d);
+    const dentro = new Set(elementosNaArea(d, r).map(e => e.id));
+    d.elementos = d.elementos.filter(e => !dentro.has(e.id));
+    await moverAreaImagem(d, r, null, null);
+    Ed.area[id] = null; redesenhar(id); terminouMudanca(d);
+}
+function soltarArea(id) { Ed.area[id] = null; redesenharJa(id); atualizarPainel(id); }
 
 /** Redesenha só o conteúdo do <svg> (o elemento continua o mesmo, para o arrasto não se perder). */
 function redesenharJa(id) {
@@ -230,6 +282,12 @@ async function redesenhar(id) {
 function atualizarPainel(id) {
     const d = figura(id), box = document.querySelector(`.fig-painel[data-fig="${id}"]`);
     if (!d || !box) return;
+    if ((Ed.tool[id] || 'sel') === 'area') {
+        const a = Ed.area[id];
+        box.innerHTML = `<b>⬚ Selecionar área</b><small>${a ? 'Arraste a área tracejada para mover a parte da imagem e o que estiver dentro dela. Clique fora para marcar outra.' : 'Arraste sobre a figura para marcar a parte que quer mover (funciona também em imagens e figuras escaneadas).'}</small>` +
+            (a ? `<div class="botoes"><button type="button" class="btn btn-danger btn-sm" data-acao="fig-area-apagar" data-fig="${id}" title="Delete">🗑 Apagar a área</button><button type="button" class="btn btn-secondary btn-sm" data-acao="fig-area-soltar" data-fig="${id}" title="Esc">Soltar</button></div>` : '');
+        return;
+    }
     const e = (d.elementos || []).find(x => x.id === Ed.sel[id]);
     if (!e) { box.innerHTML = '<small>Clique num elemento para editar. Tecla Delete apaga; Ctrl+Z desfaz.</small>'; return; }
     const c = `desenhos.#${d.id}.elementos.#${e.id}.`;
@@ -253,7 +311,7 @@ function pontoSVG(svg, ev) {
     if (d && Ed.grade[d.id] !== false) { const g = passoGrade(d); return { x: Math.round(r.x / g) * g, y: Math.round(r.y / g) * g }; }
     return { x: Math.round(r.x), y: Math.round(r.y) };
 }
-function guardarDesfazer(d) { (Ed.desfazer[d.id] = Ed.desfazer[d.id] || []).push(JSON.stringify(d.elementos)); if (Ed.desfazer[d.id].length > 60) Ed.desfazer[d.id].shift(); }
+function guardarDesfazer(d) { (Ed.desfazer[d.id] = Ed.desfazer[d.id] || []).push(JSON.stringify({ el: d.elementos, img: d.img || '' })); if (Ed.desfazer[d.id].length > 60) Ed.desfazer[d.id].shift(); }
 function terminouMudanca(d) { salvar(); atualizarSecoesFigura(d.id); }
 
 document.addEventListener('pointerdown', ev => {
@@ -263,6 +321,19 @@ document.addEventListener('pointerdown', ev => {
     const id = svg.dataset.fig, d = figura(id); if (!d) return;
     const tool = Ed.tool[id] || 'sel', p0 = pontoSVG(svg, ev);
     const alvoEl = ev.target.closest('[data-el]');
+    if (tool === 'area') {
+        const a = Ed.area[id];
+        if (a && (a.w || a.h) && dentroArea(retArea(a), p0)) {
+            const r = retArea(a);
+            guardarDesfazer(d);
+            const els = elementosNaArea(d, r).map(e => ({ e, o: JSON.parse(JSON.stringify(e)) }));
+            Ed.drag = { id, svg, modo: 'area-mover', p0, els, e: { t: 'area' } };
+        } else {
+            Ed.area[id] = { x: p0.x, y: p0.y, w: 0, h: 0, dx: 0, dy: 0 };
+            Ed.drag = { id, svg, modo: 'area-nova', p0, e: { t: 'area' } };
+        }
+        redesenharJa(id); return;
+    }
     if (tool === 'sel' || ev.target.classList.contains('alca')) {
         if (!alvoEl) { Ed.sel[id] = null; redesenharJa(id); atualizarPainel(id); return; }
         const e = d.elementos.find(x => x.id === alvoEl.dataset.el);
@@ -299,6 +370,16 @@ document.addEventListener('pointerdown', ev => {
 document.addEventListener('pointermove', ev => {
     const g = Ed.drag; if (!g) return;
     let p = pontoSVG(g.svg, ev);
+    if (g.modo === 'area-nova' || g.modo === 'area-mover') {
+        const a = Ed.area[g.id]; if (!a) return;
+        const dx = p.x - g.p0.x, dy = p.y - g.p0.y;
+        if (g.modo === 'area-nova') { a.w = dx; a.h = dy; }
+        else {
+            a.dx = dx; a.dy = dy;
+            for (const { e, o } of g.els) { if ('x1' in o) { e.x1 = o.x1 + dx; e.y1 = o.y1 + dy; e.x2 = o.x2 + dx; e.y2 = o.y2 + dy; delete e.con1; delete e.con2; } else { e.x = o.x + dx; e.y = o.y + dy; } }
+        }
+        redesenharJa(g.id); return;
+    }
     if ((g.e.t === 'ligacao' || g.e.t === 'linha') && ['novo', '1', '2'].includes(g.modo)) {
         const q = encaixar(figura(g.id), p, g.e);
         prender(g.e, g.modo === '1' ? 'con1' : 'con2', q);      // solta a ponta se ela sair do terminal
@@ -316,9 +397,21 @@ document.addEventListener('pointermove', ev => {
     else if (g.modo === 'mv') { e.x = o.x + dx; e.y = o.y + dy; }
     redesenharJa(g.id);
 });
-document.addEventListener('pointerup', () => {
+document.addEventListener('pointerup', async () => {
     const g = Ed.drag; if (!g) return;
     Ed.drag = null;
+    if (g.modo === 'area-nova') {
+        const a = Ed.area[g.id];
+        if (a) { const r = retArea(a); if (r.w < 4 || r.h < 4) Ed.area[g.id] = null; else Object.assign(a, r, { dx: 0, dy: 0 }); }
+        redesenharJa(g.id); atualizarPainel(g.id); return;
+    }
+    if (g.modo === 'area-mover') {
+        const d = figura(g.id), a = Ed.area[g.id]; if (!d || !a) return;
+        const dx = a.dx || 0, dy = a.dy || 0;
+        if (dx || dy) { await moverAreaImagem(d, retArea(a), dx, dy); a.x += dx; a.y += dy; }
+        a.dx = 0; a.dy = 0;
+        redesenhar(g.id); terminouMudanca(d); return;
+    }
     const d = figura(g.id), e = g.e;
     if (g.modo === 'novo') {
         const pequeno = ehCaixa(e) ? Math.abs(e.w) < 6 && Math.abs(e.h) < 6 : Math.hypot(e.x2 - e.x1, e.y2 - e.y1) < 8;
@@ -338,6 +431,9 @@ document.addEventListener('pointerup', () => {
 document.addEventListener('keydown', ev => {
     const ativo = document.activeElement;
     if (ativo && /INPUT|TEXTAREA|SELECT/.test(ativo.tagName)) return;
+    const idArea = Object.keys(Ed.area).find(k => Ed.area[k] && document.querySelector(`.fig-tela[data-fig="${k}"]`));
+    if (idArea && (ev.key === 'Delete' || ev.key === 'Backspace')) { ev.preventDefault(); apagarArea(idArea); return; }
+    if (idArea && ev.key === 'Escape') { soltarArea(idArea); return; }
     const id = Object.keys(Ed.sel).find(k => Ed.sel[k] && document.querySelector(`.fig-tela[data-fig="${k}"]`));
     if ((ev.key === 'Delete' || ev.key === 'Backspace') && id) { ev.preventDefault(); apagarSelecionado(id); }
     if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'd' && id) { ev.preventDefault(); duplicarSelecionado(id); }
@@ -372,7 +468,9 @@ function espelharSelecionado(id) {
 }
 function desfazerFigura(id) {
     const d = figura(id), pilha = Ed.desfazer[id]; if (!d || !pilha || !pilha.length) return;
-    d.elementos = JSON.parse(pilha.pop()); Ed.sel[id] = null; redesenhar(id); terminouMudanca(d);
+    const x = JSON.parse(pilha.pop());
+    if (Array.isArray(x)) d.elementos = x; else { d.elementos = x.el; d.img = x.img; }
+    Ed.sel[id] = null; Ed.area[id] = null; redesenhar(id); terminouMudanca(d);
 }
 function marcarFerramenta(id) {
     document.querySelectorAll(`.fig-ferr[data-fig="${id}"] [data-tool]`).forEach(b => b.classList.toggle('ativo', b.dataset.tool === (Ed.tool[id] || 'sel')));

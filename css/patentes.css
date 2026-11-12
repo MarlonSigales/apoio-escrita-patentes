@@ -201,3 +201,16 @@ input[type=date] { display: block; width: 100%; padding: 0.42rem 0.6rem; border:
 .ideia-rodada h3 small { font-weight: 400; color: var(--suave); }
 .ideia-melhorias { margin: .2rem 0 .6rem 1.2rem; font-size: .9rem; }
 .ideia-melhorias li { margin: .15rem 0; }
+
+/* baixar um documento só (topo) */
+.topbar-docs { display: inline-flex; align-items: stretch; gap: 2px; position: relative; }
+.topbar-docs .topbar-zip { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.menu-docs > summary { list-style: none; height: 100%; border-top-left-radius: 0; border-bottom-left-radius: 0; padding: .45rem .6rem; }
+.menu-docs > summary::-webkit-details-marker { display: none; }
+.menu-docs-lista { position: absolute; right: 0; top: calc(100% + 4px); z-index: 200; background: #fff; border: 1px solid var(--borda); border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.15); padding: .4rem; min-width: 250px; display: flex; flex-direction: column; }
+.menu-docs-lista small { color: var(--suave); padding: .2rem .5rem .35rem; }
+.menu-docs-lista button { text-align: left; border: 0; background: none; font: inherit; font-size: .9rem; padding: .4rem .55rem; border-radius: 6px; cursor: pointer; color: var(--texto); }
+.menu-docs-lista button:hover { background: var(--verde-claro); color: var(--teal); }
+.cartao-importar { border-left: 4px solid var(--verde); }
+/* seleção de área no editor de figuras */
+.fig-svg .area-sel { fill: rgba(64,149,128,.08); stroke: #085357; stroke-width: 2; stroke-dasharray: 8 5; vector-effect: non-scaling-stroke; cursor: move; }
