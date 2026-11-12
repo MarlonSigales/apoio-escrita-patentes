@@ -50,7 +50,17 @@ PAGINAS.inicio = {
         const pl = App.placar;
         const prox = proximaEtapa();
         const pct = pl.total ? Math.round(100 * pl.xp / pl.total) : 0;
-        return `${cabecalho('inicio', 'Escreva seu pedido de patente passo a passo, seguindo o Guia Básico do INPI e o caminho da universidade. Comece pela ficha <b>Sua invenção</b>: dela saem o resumo, as reivindicações, as buscas, o relatório, os desenhos e os formulários da universidade. Cada missão cumprida dá XP. No fim, você recebe os 8 documentos prontos.')}
+        const cab = cabecalho('inicio', 'Escreva seu pedido de patente passo a passo, seguindo o Guia Básico do INPI e o caminho da universidade. Comece pela ficha <b>Sua invenção</b>: dela saem o resumo, as reivindicações, as buscas, o relatório, os desenhos e os formulários da universidade. Cada missão cumprida dá XP. No fim, você recebe os 8 documentos prontos.');
+        const fimTitulo = cab.indexOf('</div>') + 6;   // "Comece rápido" logo abaixo do título, no topo da página
+        return `${cab.slice(0, fimTitulo)}
+        <div class="card card-comecar"><h2>Comece rápido</h2><div class="comecar-opcoes">
+            <button type="button" class="opcao" data-acao="importar-md"><b>⇪ Tenho o prompt da busca (.md)</b><span>Preenche ficha, termos, classes e buscas a partir do prompt de anterioridade.</span></button>
+            <button type="button" class="opcao" data-acao="importar-docx"><b>📄 Tenho um pedido em Word</b><span>Lê Relatório, Reivindicações, Desenhos e Resumo (.docx) e preenche tudo.</span></button>
+            <button type="button" class="opcao" data-acao="exemplo" data-ex="pressao"><b>🧪 Ver exemplo completo</b><span>Sistema de monitoramento de pressão para circuitos pneumáticos.</span></button>
+            <button type="button" class="opcao" data-acao="abrir"><b>📂 Continuar um pedido</b><span>Abra o JSON exportado antes (o arquivo com o título da patente) e siga de onde parou.</span></button>
+            <button type="button" class="opcao" data-acao="novo"><b>🗑️ Começar do zero</b><span>Apaga tudo deste navegador e abre a ficha "Sua invenção" em branco.</span></button>
+        </div></div>
+        ${cab.slice(fimTitulo)}
         <div class="painel-jogo card">
             <div class="nivel"><span class="nivel-icone">${pl.nivel[2]}</span><div><small>Seu nível</small><b>${esc(pl.nivel[1])}</b><span>${pl.xp} XP${pl.prox ? ` · faltam ${pl.prox[0] - pl.xp} XP para <b>${esc(pl.prox[1])}</b>` : ''}</span></div></div>
             <div class="barra-xp grande"><i style="width:${pct}%"></i></div><small>${pct}% do pedido completo</small>
@@ -60,13 +70,6 @@ PAGINAS.inicio = {
         <div class="card"><div class="grade-campos">${campo('titulo', 'Título provisório da invenção', { largo: true, ph: 'Ex.: Sistema de monitoramento de pressão para circuitos pneumáticos' })}</div>
         <div class="botoes"><button type="button" class="btn btn-primary" data-acao="exportar-json">💾 Exportar o pedido (.json)</button><button type="button" class="btn btn-secondary" data-acao="abrir">📂 Continuar um pedido (.json)</button></div>
         <p class="nota">Tudo fica salvo sozinho neste navegador. Para guardar, mandar ao orientador ou seguir em outro computador, exporte o JSON: o arquivo leva o nome do título${p.titulo ? ` (<b>${esc(nomePeloTitulo(p, 'json'))}</b>)` : ''} e tem tudo, inclusive as figuras. Depois é só usar "Continuar um pedido".${p.jogo.exportouEm ? ` Última exportação: ${new Date(p.jogo.exportouEm).toLocaleString('pt-BR')}.` : ''}</p></div>
-        <div class="card"><h2>Comece rápido</h2><div class="comecar-opcoes">
-            <button type="button" class="opcao" data-acao="importar-md"><b>⇪ Tenho o prompt da busca (.md)</b><span>Preenche ficha, termos, classes e buscas a partir do prompt de anterioridade.</span></button>
-            <button type="button" class="opcao" data-acao="importar-docx"><b>📄 Tenho um pedido em Word</b><span>Lê Relatório, Reivindicações, Desenhos e Resumo (.docx) e preenche tudo.</span></button>
-            <button type="button" class="opcao" data-acao="exemplo" data-ex="pressao"><b>🧪 Ver exemplo completo</b><span>Sistema de monitoramento de pressão para circuitos pneumáticos.</span></button>
-            <button type="button" class="opcao" data-acao="abrir"><b>📂 Continuar um pedido</b><span>Abra o JSON exportado antes (o arquivo com o título da patente) e siga de onde parou.</span></button>
-            <button type="button" class="opcao" data-acao="novo"><b>🗑️ Começar do zero</b><span>Apaga tudo deste navegador e abre a ficha "Sua invenção" em branco.</span></button>
-        </div></div>
         <div class="card"><h2>🏅 Medalhas</h2><div class="medalhas">${pl.medalhas.map(m => `<div class="medalha ${m.ok ? 'ganha' : ''}" title="${escAttr(m.desc)}"><span>${m.icone}</span><b>${esc(m.nome)}</b><small>${esc(m.desc)}</small></div>`).join('')}</div></div>
         <div class="card"><h2>O caminho</h2><ol class="trilha">${ETAPAS.filter(e => e.id !== 'inicio').map(e => { const st = estadoEtapa(pl, e.id); return `<li class="${st}"><a href="#/${e.id}">${e.icone} ${esc(e.titulo)}</a> <small>${pl.porEtapa[e.id] ? pl.porEtapa[e.id].feitas + '/' + pl.porEtapa[e.id].total : ''}</small></li>`; }).join('')}</ol></div>`;
     }

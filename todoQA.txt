@@ -43,6 +43,7 @@ Atualizado em 12/11/2026 (versão 3).
    Aplicar só no vazio ou substituir o que a IA melhorou, com desfazer; cada rodada fica registrada (últimas 12).
    O prompt pede proteção ampla sem entregar o produto inteiro (termos genéricos, alternativas, cascata de dependentes,
    know-how dispensável fora), respeitando a suficiência do art. 24 da LPI. Missões +30 XP e medalha "Parceria com a IA".
+15 [resolvido 12/11/2026] "Comece rápido" no topo da página inicial, logo abaixo do título.
 2 [futuro] Ampliar o catálogo IPC/CPC (hoje ~80 classes, foco em agro, eletrônica e controle).
 3 [futuro] Ler PDF direto como fonte (hoje: copiar e colar o texto).
 4 [futuro] Nuvem da equipe (MEGA), como no Projeto Conceitual, com senha e dados resguardados.
