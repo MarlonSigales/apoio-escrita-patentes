@@ -291,7 +291,7 @@ const ACOES = {
     'novo': async () => {
         if (temConteudo() && !confirm('Apagar tudo e começar do zero? O pedido atual, as fontes e as figuras serão apagados deste navegador (baixe o ZIP antes se quiser guardar).')) return;
         clearTimeout(App._t); clearTimeout(App._tp);
-        Armazem.apagar();
+        Armazem.apagar(); DesfazerIdeia.limpar();
         await Imagens.limpar();
         App.p = normalizarPedido(pedidoVazio());
         Armazem.salvar(App.p);
@@ -461,6 +461,30 @@ const ACOES = {
     'add-registro'() { App.p.busca.registroColado.push({ id: uid(), base: 'inpi', consulta: '', n: '', triados: '' }); mudou(); },
     'copiar-converter-pdf'() { copiarTexto(promptConverterBusca(App.p)); avisar('Pedido copiado. Cole numa IA, anexe o PDF da busca e traga o JSON de volta para este campo.', 'ok', 6000); },
     'copiar-prompt-relatorio'() { copiarTexto(promptMelhorarRelatorio(App.p)); },
+    'copiar-prompt-ideia'() {
+        if (palavras(App.p.ideia.texto) < 15 && !App.p.ideia.rodadas.length) return avisar('Conte a ideia antes (15 palavras ou mais).', 'erro');
+        copiarTexto(promptIdeia(App.p)); avisar('Prompt copiado. Cole numa IA e traga o JSON de volta para o campo 2.', 'ok', 6000);
+    },
+    'baixar-prompt-ideia'() { baixarArquivo(new Blob([promptIdeia(App.p)], { type: 'text/markdown' }), `Prompt pedido rodada ${App.p.ideia.rodadas.length + 1} - ` + nomePeloTitulo(App.p, 'md')); },
+    'aplicar-ideia'(el) {
+        const t = ($('#resposta-ideia') || {}).value || '';
+        if (!t.trim()) return avisar('Cole a resposta da IA no campo 2 antes.', 'erro');
+        const modo = el.dataset.modo === 'melhorar' ? 'melhorar' : 'completar';
+        if (modo === 'melhorar' && temConteudo() && !confirm('Substituir os campos que a IA devolveu preenchidos? (dá para desfazer)')) return;
+        const copia = JSON.parse(JSON.stringify(App.p));
+        try {
+            const feito = aplicarRespostaIdeia(App.p, t, modo);
+            DesfazerIdeia.guardar(copia);
+            avisar(feito.length ? `Rodada ${App.p.ideia.rodadas.length}: ${feito.slice(0, 8).join(', ')}${feito.length > 8 ? '…' : ''}` : 'Rodada registrada. Nada novo para preencher (use "Aplicar as melhorias" para substituir).', 'ok', 8000);
+            App.placar = null; mudou();
+        } catch (e) { App.p = normalizarPedido(copia); avisar('Não consegui ler: ' + e.message, 'erro', 8000); }
+    },
+    'desfazer-ideia'() {
+        if (!confirm('Voltar o pedido para antes da última aplicação da IA?')) return;
+        const ant = DesfazerIdeia.tirar();
+        if (!ant) return avisar('Não há o que desfazer.', 'erro');
+        App.p = ant; App.placar = null; avisar('Pedido voltou para antes da última aplicação.'); mudou();
+    },
     'baixar-prompt-relatorio'() { baixarArquivo(new Blob([promptMelhorarRelatorio(App.p)], { type: 'text/markdown' }), 'Prompt relatorio - ' + nomePeloTitulo(App.p, 'md')); },
     'aplicar-relatorio-ia'() {
         const t = ($('#resposta-relatorio') || {}).value || '';

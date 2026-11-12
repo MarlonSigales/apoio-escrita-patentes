@@ -128,6 +128,50 @@ function ok(cond, nome) { RES.push([!!cond, nome]); }
       ok(a === '220,120,400,130' && b === '600,180' && c === '160,180' && !lg.con2 && lg.x2 === 600, `ligação acompanha o símbolo (move, gira e solta ao apagar): ${a} | ${b} | ${c}`); }
     { const x = parXml(T('1.\tSistema de monitoramento, caracterizado por compreender um sensor (01); e caracterizada pelo fato de que gira.'));
       ok((x.match(/<w:b\/>/g) || []).length === 2 && /<w:b\/>[^]*?caracterizado por<\/w:t>/.test(x) && /<w:b\/>[^]*?caracterizada pelo fato de que<\/w:t>/.test(x) && !/<w:b\/>[^<]*<w:sz[^>]*>[^]*?compreender/.test(x.split('caracterizado por')[1].split('caracterizada')[0]), '"caracterizado por" em negrito no .docx'); }
+    // ideia com as palavras do inventor → prompt → JSON da IA com o pedido inteiro (js/ideia.js)
+    { const q = normalizarPedido(pedidoVazio());
+      q.ideia.texto = 'Um aparelho portátil que mede a pressão dos circuitos pneumáticos e manda sem fio para o celular.';
+      q.universidade.inventores = [Object.assign(inventorVazio(), { nome: 'Fulano Teste', cpf: '123.456.789-00', email: 'fulano@teste.com' })];
+      const pr = promptIdeia(q);
+      ok(pr.includes(q.ideia.texto) && pr.includes(FORMATO_IDEIA) && pr.includes('rodada 1') && pr.includes('segredos_mantidos') && pr.includes('art. 24'), 'prompt da ideia leva o texto, a rodada, o modelo do JSON e a regra de suficiência');
+      ok(!/123\.456|fulano@|Fulano Teste/.test(pr), 'prompt da ideia sem dados pessoais dos inventores');
+      const resp = { formato: FORMATO_IDEIA, versao: 1, rodada: 1, pedido: {
+          natureza: 'MU', natureza_justificativa: 'forma e disposição', titulo: 'Dispositivo portátil de monitoramento de pressão', area: 'máquinas agrícolas',
+          ficha: { campo: 'Monitorar a pressão de circuitos pneumáticos de máquinas agrícolas', problema: 'Manômetros fixos exigem um em cada máquina', solucao: 'Dispositivo portátil com sensor e transmissão sem fio' },
+          componentes: [{ num: '1', nome: 'Corpo', funcao: 'aloja' }, { num: '02', nome: 'Sensor de pressão', funcao: 'mede' }, { num: '03', nome: 'Unidade de processamento', funcao: 'processa e transmite' }],
+          reivindicacoes: [{ dep: null, texto: 'DISPOSITIVO PORTÁTIL, caracterizado por compreender um corpo (01) e um sensor de pressão (02).' }, { dep: 1, texto: 'pela unidade de processamento (03) transmitir sem fio' }, { dep: 5, texto: 'pelo corpo (01) ser de polímero' }],
+          resumo: 'Dispositivo portátil de monitoramento de pressão para circuitos pneumáticos de máquinas agrícolas, compreendendo um corpo (01), um sensor de pressão (02) e uma unidade de processamento (03) que transmite a leitura sem fio. FIGURA 1.',
+          figura_resumo: '1', relatorio: { campo: '[0001] A presente invenção se refere a dispositivos de medição de pressão.', descricao: 'Em uma concretização…' },
+          desenhos: [{ legenda: 'A FIGURA 1 ilustra uma vista em perspectiva do dispositivo', numeros: ['01'] }, { legenda: 'ilustra o diagrama de blocos' }],
+          classes: ['G01L 19/08', 'g01l19/00', 'Z99Z 1/00'], termos_busca: { objeto: 'manômetro; medidor de pressão', problema: 'mobilidade' },
+          traducoes: { 'manômetro': 'pressure gauge; manómetro' }, depositantes_busca: 'WIKA',
+          universidade: { contexto: 'Máquinas agrícolas usam circuitos pneumáticos', consiste: 'novo produto', areaPredominante: 'ELETRÔNICA', areasAbrangidas: ['Eng. Agrícola', 'inexistente'] } },
+        estrategia: 'núcleo: portátil + sem fio', segredos_mantidos: ['valor de calibração do sensor'], mudancas: ['primeira versão'],
+        proximas_melhorias: [{ prioridade: 2, onde: 'desenhos', o_que: 'desenhar a FIGURA 2' }, { prioridade: 1, onde: 'reivindicações', o_que: 'reivindicação de método' }],
+        perguntas: ['Qual a faixa de pressão?'], riscos: [] };
+      q.ficha.problema = 'texto do inventor';
+      const feito = aplicarRespostaIdeia(q, 'Aqui está:\n```json\n' + JSON.stringify(resp) + '\n```', 'completar');
+      ok(q.natureza === 'MU' && q.titulo.startsWith('Dispositivo') && q.ficha.campo && q.ficha.problema === 'texto do inventor', 'aplicar a ideia (só o vazio) preenche e não apaga o que o inventor escreveu');
+      ok(q.ficha.componentes.length === 3 && q.ficha.componentes[0].num === '01', 'componentes com número de 2 dígitos');
+      ok(q.reivindicacoes.length === 3 && q.reivindicacoes[0].texto === 'compreender um corpo (01) e um sensor de pressão (02)' && q.reivindicacoes[1].dep === 1 && q.reivindicacoes[2].dep === null, 'reivindicações sem preâmbulo repetido e com dependência válida');
+      ok(q.relatorio.campo === 'A presente invenção se refere a dispositivos de medição de pressão.', 'relatório sem a numeração de parágrafo da IA');
+      ok(q.desenhos.length === 2 && q.desenhos[0].legenda === 'ilustra uma vista em perspectiva do dispositivo', 'figuras criadas com legenda');
+      ok(q.classes.marcadas.includes('G01L 19/08') && /Z99Z 1\/00/.test(q.classes.manuais), 'classes do catálogo marcadas e as outras em "outras classes"');
+      ok(q.busca.termos.objeto.includes('manômetro') && q.busca.traducoes['manometro'] && q.busca.depositantes === 'WIKA', 'termos, traduções e depositantes da busca');
+      ok(q.universidade.contexto && q.universidade.consiste === 'NOVO PRODUTO' && q.universidade.areaPredominante === 'ELETRÔNICA' && q.universidade.areasAbrangidas.join() === 'Eng. Agrícola', 'formulários da universidade');
+      ok(q.universidade.inventores[0].cpf === '123.456.789-00', 'inventores intocados');
+      const r1 = q.ideia.rodadas[0];
+      ok(q.ideia.rodadas.length === 1 && r1.melhorias[0].prioridade === 1 && r1.segredos.length === 1 && r1.perguntas.length === 1 && feito.length > 10, 'rodada registrada com melhorias ordenadas, perguntas e know-how');
+      ok(placar(q).missoes.inicio[1].ok, 'missão da 1ª rodada cumprida');
+      q.ideia.respostas = 'A faixa é de 0 a 10 bar.';
+      const pr2 = promptIdeia(q);
+      ok(pr2.includes('rodada 2') && pr2.includes('0 a 10 bar') && pr2.includes('valor de calibração do sensor') && pr2.includes('reivindicação de método') && pr2.includes('Dispositivo portátil'), 'rodada 2 leva o pedido melhorado, as respostas, as melhorias e o know-how a manter fora');
+      resp.pedido.ficha.problema = 'problema reescrito pela IA'; resp.pedido.reivindicacoes = [{ dep: null, texto: 'compreender um corpo (01)' }];
+      aplicarRespostaIdeia(q, JSON.stringify(resp), 'melhorar');
+      ok(q.ficha.problema === 'problema reescrito pela IA' && q.reivindicacoes.length === 1 && q.ideia.rodadas.length === 2 && q.ideia.respostas === '', 'modo melhorar substitui e abre a rodada 2');
+      let erro = ''; try { aplicarRespostaIdeia(q, '{"formato":"apoio-escrita-patentes-busca"}'); } catch (e) { erro = e.message; }
+      ok(/não achei o JSON/.test(erro), 'JSON de outro formato é recusado');
+      ok(normalizarPedido({ titulo: 'x' }).ideia.rodadas.length === 0, 'pedido antigo ganha o campo da ideia'); }
     for (const d of DOCUMENTOS) {
         const b = await gerarDocumento(p, d.id);
         const z = await JSZip.loadAsync(b);

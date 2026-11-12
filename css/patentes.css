@@ -193,3 +193,11 @@ input[type=date] { display: block; width: 100%; padding: 0.42rem 0.6rem; border:
 .fig-biblio .simb:hover { border-color: var(--teal); }
 .fig-biblio .simb.ativo { background: var(--verde-claro); border-color: var(--teal); box-shadow: 0 0 0 2px var(--teal) inset; }
 .fig-painel select { max-width: 100%; }
+
+/* ideia com as palavras do inventor (página inicial) */
+#ideia > label.largo { display: block; font-weight: 600; color: var(--teal); }
+#ideia > label.largo textarea { margin-top: .4rem; font-weight: 400; }
+.ideia-rodada h3 { margin: .3rem 0 .4rem; }
+.ideia-rodada h3 small { font-weight: 400; color: var(--suave); }
+.ideia-melhorias { margin: .2rem 0 .6rem 1.2rem; font-size: .9rem; }
+.ideia-melhorias li { margin: .15rem 0; }

@@ -2,7 +2,7 @@
 
 TODO / QA — Apoio à Escrita de Patentes
 Marcadores: [fazer] [futuro] [resolvido] [rejeitado]
-Atualizado em 04/11/2026 (versão 2).
+Atualizado em 12/11/2026 (versão 3).
 
 === DIRETRIZES PERMANENTES
 - SIMPLES PARA QUALQUER ALUNO: quem nunca escreveu patente consegue usar sem manual. Antes de fechar um item: (1) dá para fazer
@@ -36,7 +36,19 @@ Atualizado em 04/11/2026 (versão 2).
 12 [resolvido 04/11/2026] Desenhos: biblioteca de símbolos (fluxograma, blocos, elétrico, P&ID), ligações com encaixe,
    estilos e cotovelos, grade, girar, espelhar e duplicar.
 13 [resolvido 04/11/2026] Empresas depositantes da busca vão para os itens 2.4 e 2.5 do Formulário de Informação Tecnológica.
+14 [resolvido 12/11/2026] Página inicial: campo "Conte a sua ideia com as suas palavras" (pergunta em linguagem do dia a dia)
+   → prompt copiável (rodada N) que leva a ideia, o pedido atual sem dados pessoais, as respostas e o know-how a manter fora
+   → JSON "apoio-escrita-patentes-pedido-ia" com o pedido inteiro (ficha, componentes, reivindicações, resumo, relatório,
+   legendas, classes, termos, traduções, universidade) + estratégia, próximas melhorias, perguntas, riscos e segredos mantidos.
+   Aplicar só no vazio ou substituir o que a IA melhorou, com desfazer; cada rodada fica registrada (últimas 12).
+   O prompt pede proteção ampla sem entregar o produto inteiro (termos genéricos, alternativas, cascata de dependentes,
+   know-how dispensável fora), respeitando a suficiência do art. 24 da LPI. Missões +30 XP e medalha "Parceria com a IA".
 2 [futuro] Ampliar o catálogo IPC/CPC (hoje ~80 classes, foco em agro, eletrônica e controle).
 3 [futuro] Ler PDF direto como fonte (hoje: copiar e colar o texto).
 4 [futuro] Nuvem da equipe (MEGA), como no Projeto Conceitual, com senha e dados resguardados.
 5 [futuro] Importar o projeto do Projeto Conceitual (concepção selecionada → ficha da invenção).
+
+=== QA (12/11/2026, versão 3)
+- tests/testes.html: 83 de 83 (19 novos da ideia: prompt sem dados pessoais, só-vazio não apaga, modo melhorar, rodada 2,
+  classes do catálogo e fora dele, numeração [0001] retirada, formato errado recusado).
+- Playwright 360/768/1024/1920: sem estouro e sem erro; copiar → colar JSON → aplicar → rodada 2 → desfazer.

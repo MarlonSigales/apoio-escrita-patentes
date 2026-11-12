@@ -63,7 +63,8 @@ function pedidoVazio() {
         revisao: {},             // id do item → true
         deposito: { data: '', numero: '', protocolo: '', gru: '', exameSolicitado: false, desconto: '' },
         universidade: universidadePadrao(),
-        jogo: { xpVisto: 0, medalhasVistas: [] }
+        jogo: { xpVisto: 0, medalhasVistas: [] },
+        ideia: { texto: '', respostas: '', rodadas: [] }   // a ideia com as palavras do inventor e as rodadas com IA (js/ideia.js)
     };
 }
 
@@ -116,6 +117,7 @@ function normalizarPedido(p) {
     if (!Array.isArray(p.universidade.areasAbrangidas)) p.universidade.areasAbrangidas = [];
     p.busca.registroColado = (p.busca.registroColado || []).map(r => Object.assign({ id: uid(), base: '', consulta: '', n: '', triados: '' }, r));
     p.busca.resultados = deduplicarResultados(p.busca.resultados);
+    if (!Array.isArray(p.ideia.rodadas)) p.ideia.rodadas = [];
     return p;
 }
 

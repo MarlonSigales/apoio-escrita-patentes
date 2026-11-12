@@ -37,7 +37,11 @@ function missoes(p) {
     const erros = verificar(p).filter(x => x.nivel === 'erro');
     const soma = u.inventores.concat(u.colaboradores).reduce((s, x) => s + (Number(String(x.percentual).replace(',', '.')) || 0), 0);
     return {
-        inicio: [{ t: 'Dar nome ao projeto (título provisório)', xp: 10, ok: algum(p.titulo) }],
+        inicio: [
+            { t: 'Contar a ideia com as suas palavras (40 palavras ou mais)', xp: 15, ok: palavras(p.ideia.texto) >= 40 },
+            { t: 'Trazer a resposta da IA para o pedido (1ª rodada)', xp: 15, ok: p.ideia.rodadas.length >= 1 },
+            { t: 'Dar nome ao projeto (título provisório)', xp: 10, ok: algum(p.titulo) }
+        ],
         ficha: [
             { t: 'Escolher a natureza: PI ou MU', xp: 20, ok: !!p.natureza },
             { t: 'Registrar divulgações (TCC, congresso, artigo) ou confirmar que não houve', xp: 15, ok: p.contexto.divulgacoes.length > 0 || p.revisao.semDivulgacao },
@@ -133,6 +137,7 @@ function placar(p) {
 function medalhas(p, pe) {
     const lista = [
         ['natureza', '🎯', 'Rumo certo', 'Escolheu PI ou MU', !!p.natureza],
+        ['rodadas', '🤖', 'Parceria com a IA', '3 rodadas de melhoria do pedido', p.ideia.rodadas.length >= 3],
         ['ficha', '💡', 'Ideia no papel', 'Ficha da invenção completa', pe.ficha.feitas === pe.ficha.total],
         ['fontes', '📚', 'Bibliotecário(a)', '3 fontes no caderno', p.fontes.length >= 3],
         ['classe', '🧭', 'Classificador(a)', 'Marcou classes IPC/CPC', classesBusca(p).length >= 2],

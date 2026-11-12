@@ -34,6 +34,7 @@ function exemploPressao() {
     Object.assign(p, { natureza: 'MU', titulo: 'Sistema de monitoramento de pressão para circuitos pneumáticos', area: 'eletrônica embarcada e máquinas agrícolas' });
     Object.assign(p.contexto, { instituicao: 'Universidade Federal de Pelotas', ano: '2024', inventores: 'Professor(a) Orientador(a) Exemplo\nEstudante Exemplo', depositante: 'Universidade Federal de Pelotas' });
     p.revisao.semDivulgacao = true;
+    p.ideia.texto = 'É um aparelhinho portátil que a gente engata na saída de ar das máquinas e implementos agrícolas para ver a pressão dos circuitos pneumáticos sem precisar de manômetro fixo. Ele tem um sensor de pressão, uma plaquinha com microcontrolador e bateria, e manda a leitura sem fio para o celular ou para uma tela. O diferencial é ser leve, sem fio e servir em qualquer máquina, avisando quando a pressão foge da pressão inicial. Hoje o pessoal usa manômetro fixo em cada máquina ou nem mede.';
     p.ficha = {
         campo: 'Um sistema eletrônico com um sensor de pressão para monitorar continuamente a pressão de circuitos pneumáticos e identificar variações em relação à pressão inicial',
         problema: 'A facilidade de acesso e a necessidade de locomoção em aplicações que envolvem máquinas e implementos agrícolas com sistemas pneumáticos; os manômetros existentes precisam de um local fixo na máquina',

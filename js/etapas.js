@@ -56,6 +56,7 @@ PAGINAS.inicio = {
             <div class="barra-xp grande"><i style="width:${pct}%"></i></div><small>${pct}% do pedido completo</small>
             ${prox ? `<div class="proximo-passo"><div class="proximo-passo-texto"><span class="proximo-passo-rotulo">próxima missão</span> ${ETAPAS.find(x => x.id === prox).icone} <b>${esc(ETAPAS.find(x => x.id === prox).titulo)}</b></div><a class="btn btn-primary" href="#/${prox}">Continuar ▶</a></div>` : ''}
         </div>
+        ${cartaoIdeia(p)}
         <div class="card"><div class="grade-campos">${campo('titulo', 'Título provisório da invenção', { largo: true, ph: 'Ex.: Sistema de monitoramento de pressão para circuitos pneumáticos' })}</div>
         <div class="botoes"><button type="button" class="btn btn-primary" data-acao="exportar-json">💾 Exportar o pedido (.json)</button><button type="button" class="btn btn-secondary" data-acao="abrir">📂 Continuar um pedido (.json)</button></div>
         <p class="nota">Tudo fica salvo sozinho neste navegador. Para guardar, mandar ao orientador ou seguir em outro computador, exporte o JSON: o arquivo leva o nome do título${p.titulo ? ` (<b>${esc(nomePeloTitulo(p, 'json'))}</b>)` : ''} e tem tudo, inclusive as figuras. Depois é só usar "Continuar um pedido".${p.jogo.exportouEm ? ` Última exportação: ${new Date(p.jogo.exportouEm).toLocaleString('pt-BR')}.` : ''}</p></div>
@@ -70,6 +71,33 @@ PAGINAS.inicio = {
         <div class="card"><h2>O caminho</h2><ol class="trilha">${ETAPAS.filter(e => e.id !== 'inicio').map(e => { const st = estadoEtapa(pl, e.id); return `<li class="${st}"><a href="#/${e.id}">${e.icone} ${esc(e.titulo)}</a> <small>${pl.porEtapa[e.id] ? pl.porEtapa[e.id].feitas + '/' + pl.porEtapa[e.id].total : ''}</small></li>`; }).join('')}</ol></div>`;
     }
 };
+
+/** Página inicial: a ideia com as palavras do inventor → prompt copiável → JSON da IA com o pedido inteiro (js/ideia.js). */
+function cartaoIdeia(p) {
+    const rods = p.ideia.rodadas, ult = rods[rods.length - 1], n = rods.length + 1;
+    const npal = palavras(p.ideia.texto);
+    const lst = (tit, xs, cls) => xs && xs.length ? `<p class="nota"><b>${tit}</b></p><ul class="alertas">${xs.map(x => `<li class="${cls}">${esc(x)}</li>`).join('')}</ul>` : '';
+    const rodada = ult ? `<div class="melhoria ideia-rodada">
+        <h3>Rodada ${ult.n} <small>${new Date(ult.data).toLocaleString('pt-BR')} · ${ult.modo === 'melhorar' ? 'melhorias aplicadas' : 'só o vazio preenchido'} · ${ult.aplicados} item(ns)</small></h3>
+        ${ult.estrategia ? `<p class="nota"><b>Estratégia:</b> ${esc(ult.estrategia)}</p>` : ''}${ult.naturezaJustificativa ? `<p class="nota"><b>PI ou MU:</b> ${esc(ult.naturezaJustificativa)}</p>` : ''}
+        ${ult.melhorias.length ? `<p class="nota"><b>Próximas melhorias (por prioridade):</b></p><ol class="ideia-melhorias">${ult.melhorias.map(m => `<li>${m.onde ? `<span class="chip chip-fixo">${esc(m.onde)}</span> ` : ''}${esc(m.o_que)}</li>`).join('')}</ol>` : ''}
+        ${lst('Perguntas da IA (responda no campo logo abaixo para a próxima rodada):', ult.perguntas, 'aviso')}${lst('Riscos:', ult.riscos, 'erro')}${lst('O que mudou nesta rodada:', ult.mudancas, 'ok')}
+        ${ult.segredos.length ? `<details class="nota"><summary>🔒 Know-how deixado fora do pedido de propósito (${ult.segredos.length}) — guarde em sigilo</summary><ul>${ult.segredos.map(s => `<li>${esc(s)}</li>`).join('')}</ul><p>Fica neste navegador e no JSON exportado do pedido; não entra nos 8 documentos. Não mande este JSON para fora da equipe.</p></details>` : ''}
+    </div>` : '';
+    return `<div class="card cartao-ia" id="ideia"><h2>🗣️ Conte a sua ideia com as suas palavras</h2>
+        <label class="largo">${esc(PERGUNTA_IDEIA)}<textarea data-c="ideia.texto" rows="8" placeholder="Ex.: é um aparelhinho que vai no trator e mede a pressão dos pneus/mangueiras sem fio… o que tem de diferente é que…">${esc(p.ideia.texto)}</textarea><span class="campo-rodape"><small class="contador-palavras" data-conta="ideia.texto">${npal} palavras</small></span></label>
+        ${rodada}
+        ${ult ? campo('ideia.respostas', `Respostas às perguntas da rodada ${ult.n} e o que mudou desde então`, { tipo: 'textarea', largo: true, linhas: 4, ph: '1. … 2. … Também mudamos…' }) : ''}
+        <p class="nota"><b>1.</b> Copie o prompt e cole numa IA (ChatGPT, Claude, Gemini…). Ele leva a sua ideia${rods.length ? ', o pedido como está, as respostas e as melhorias combinadas' : ''} e pede de volta um JSON com o <b>pedido inteiro pré-preenchido</b>: ficha, reivindicações, resumo, relatório, legendas das figuras, classes, termos de busca e formulários da universidade. Dados pessoais dos inventores não vão no prompt.</p>
+        <div class="botoes"><button type="button" class="btn btn-primary" data-acao="copiar-prompt-ideia">📋 Copiar prompt (rodada ${n})</button><button type="button" class="btn btn-secondary" data-acao="baixar-prompt-ideia">⬇ Baixar prompt (.md)</button></div>
+        <p class="nota">🔐 O texto pede à IA para proteger bem sem entregar o produto inteiro: termos genéricos, alternativas, reivindicações em cascata e o know-how dispensável fora do pedido. A lei exige descrição suficiente (art. 24 da Lei 9.279/96), então o essencial para reproduzir a invenção precisa entrar. Antes de colar segredos numa IA, confira se ela está configurada para não usar as suas conversas no treinamento.</p>
+        <p class="nota"><b>2.</b> Cole aqui a resposta da IA (o bloco JSON):</p>
+        <textarea id="resposta-ideia" rows="5" placeholder='{ "formato": "${FORMATO_IDEIA}", "rodada": ${n}, "pedido": { … } }'></textarea>
+        <div class="botoes"><button type="button" class="btn btn-primary" data-acao="aplicar-ideia" data-modo="${rods.length ? 'melhorar' : 'completar'}">${rods.length ? '✨ Aplicar as melhorias ao pedido' : '⇩ Preencher o pedido inteiro'}</button>
+            <button type="button" class="btn btn-secondary" data-acao="aplicar-ideia" data-modo="${rods.length ? 'completar' : 'melhorar'}">${rods.length ? 'Só preencher o que está vazio' : 'Substituir o que já escrevi'}</button>
+            ${DesfazerIdeia.tem() ? '<button type="button" class="btn-link" data-acao="desfazer-ideia">↶ Desfazer a última aplicação</button>' : ''}</div>
+        <p class="nota"><b>3.</b> Confira as abas, responda às perguntas da IA (logo abaixo da sua ideia) e copie o prompt de novo: a cada rodada a IA recebe o pedido já melhorado e propõe as próximas melhorias.</p></div>`;
+}
 
 // ------------------------------------------------------------ FICHA
 PAGINAS.ficha = {
