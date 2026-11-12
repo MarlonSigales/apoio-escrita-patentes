@@ -18,7 +18,7 @@ const FIG_TOOLS = [
     ['area', '⬚', 'Selecionar uma área e mover (como no Paint): arraste para marcar e depois arraste a área. Move a parte da imagem e o que estiver dentro. Delete apaga a área; Esc solta'],
     ['seta', '➘', 'Seta numerada: arraste da peça até onde o número deve ficar'],
     ['ligacao', '⤳', 'Ligação: fluxo, fio, tubulação ou sinal (estilo, pontas e cotovelo no painel). Encaixa nos terminais dos símbolos'],
-    ['ret', '▭', 'Retângulo'], ['elipse', '◯', 'Elipse'], ['linha', '╱', 'Linha'], ['texto', 'T', 'Texto (traduzível)']
+    ['ret', '▭', 'Retângulo'], ['retArred', '▢', 'Caixa com bordas arredondadas'], ['elipse', '◯', 'Elipse'], ['linha', '╱', 'Linha'], ['texto', 'T', 'Texto (traduzível)']
 ];
 const Ed = { tool: {}, num: {}, sel: {}, drag: null, desfazer: {}, url: {}, forma: {}, grade: {}, lig: {}, area: {} };
 const ehCaixa = e => e.t === 'ret' || e.t === 'elipse' || e.t === 'sim';
@@ -164,7 +164,7 @@ function svgElemento(p, d, e, comAlcas) {
     const sel = comAlcas && Ed.sel[d.id] === e.id;
     const traço = `stroke="#000" stroke-width="${Math.max(2, d.w / 400)}" fill="none"`;
     let s = '';
-    if (e.t === 'ret') s = `<rect x="${e.x}" y="${e.y}" width="${e.w}" height="${e.h}" ${traço}/>`;
+    if (e.t === 'ret') { const x = Math.min(e.x, e.x + e.w), y = Math.min(e.y, e.y + e.h), w = Math.abs(e.w), h = Math.abs(e.h), r = e.arred ? Math.round(Math.min(w, h) * 0.2) : 0; s = `<rect x="${x}" y="${y}" width="${w}" height="${h}"${r ? ` rx="${r}" ry="${r}"` : ''} ${traço}/>`; }
     else if (e.t === 'elipse') s = `<ellipse cx="${e.x + e.w / 2}" cy="${e.y + e.h / 2}" rx="${Math.abs(e.w / 2)}" ry="${Math.abs(e.h / 2)}" ${traço}/>`;
     else if (e.t === 'linha') s = `<line x1="${e.x1}" y1="${e.y1}" x2="${e.x2}" y2="${e.y2}" ${traço}/>`;
     else if (e.t === 'ligacao') s = svgLigacao(d, e);
@@ -291,12 +291,13 @@ function atualizarPainel(id) {
     const e = (d.elementos || []).find(x => x.id === Ed.sel[id]);
     if (!e) { box.innerHTML = '<small>Clique num elemento para editar. Tecla Delete apaga; Ctrl+Z desfaz.</small>'; return; }
     const c = `desenhos.#${d.id}.elementos.#${e.id}.`;
-    const nomes = { seta: 'Seta numerada', ret: 'Retângulo', elipse: 'Elipse', linha: 'Linha', texto: 'Texto', ligacao: 'Ligação', sim: (SIMBOLOS[e.forma] || {}).n || 'Símbolo' };
+    const nomes = { seta: 'Seta numerada', ret: e.arred ? 'Caixa arredondada' : 'Retângulo', elipse: 'Elipse', linha: 'Linha', texto: 'Texto', ligacao: 'Ligação', sim: (SIMBOLOS[e.forma] || {}).n || 'Símbolo' };
     const sel = (prop, opts, val) => `<select data-fig-prop="${prop}" data-fig="${d.id}">${opts.map(([v, t]) => `<option value="${v}" ${val === v ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select>`;
     let corpo = '';
     if (e.t === 'seta') corpo = `<label class="campo-inline">Número <select data-fig-num="${d.id}">${[...new Set([...numerosUsados(App.p), n2(e.num)])].sort().map(n => `<option ${n === n2(e.num) ? 'selected' : ''}>${n}</option>`).join('')}<option value="novo">novo (${n2(Math.max(0, ...numerosUsados(App.p).map(Number)) + 1)})</option></select></label><small>Setas com o mesmo número usam a mesma descrição.</small>`;
     if (e.t === 'texto') corpo = `<label>Português<input type="text" data-c="${c}pt" value="${escAttr(e.pt)}"></label><label>Inglês<input type="text" data-c="${c}en" value="${escAttr(e.en)}"></label><label>Espanhol<input type="text" data-c="${c}es" value="${escAttr(e.es)}"></label><label class="campo-inline">Tamanho <input type="number" min="8" max="200" data-c="${c}tam" value="${escAttr(e.tam || fonteTexto(d, e))}" style="width:5rem"></label>`;
     if (e.t === 'sim') corpo = `<label>Rótulo (português)<input type="text" data-c="${c}pt" value="${escAttr(e.pt)}"></label><label>Inglês<input type="text" data-c="${c}en" value="${escAttr(e.en)}"></label><label>Espanhol<input type="text" data-c="${c}es" value="${escAttr(e.es)}"></label><small>Use | para quebrar a linha (ex.: Ler|sensor).</small><label class="campo-inline">Tamanho do texto <input type="number" min="8" max="200" data-c="${c}tam" value="${escAttr(e.tam || '')}" placeholder="auto" style="width:5rem"></label>`;
+    if (e.t === 'ret') corpo = `<label>Cantos ${sel('arred', [['', 'Retos'], ['1', 'Arredondados']], e.arred ? '1' : '')}</label>`;
     if (e.t === 'ligacao') corpo = `<label>Estilo ${sel('estilo', ESTILOS_LIGACAO, e.estilo)}</label><label>Ponta no fim ${sel('fim', PONTAS_LIGACAO, e.fim)}</label><label>Ponta no início ${sel('ini', PONTAS_LIGACAO, e.ini)}</label><label>Traçado ${sel('cotovelo', COTOVELOS, e.cotovelo)}</label><small>As próximas ligações desta figura usam o mesmo estilo.</small>`;
     const giro = e.t !== 'texto' ? `<button type="button" class="btn btn-secondary btn-sm" data-acao="fig-girar" data-fig="${d.id}" title="Girar 90°">⟳ 90°</button>` : '';
     const esp = e.t === 'sim' ? `<button type="button" class="btn btn-secondary btn-sm" data-acao="fig-espelhar" data-fig="${d.id}" title="Espelhar na horizontal">⇋ Espelhar</button>` : '';
@@ -344,6 +345,7 @@ document.addEventListener('pointerdown', ev => {
     guardarDesfazer(d);
     let e;
     if (tool === 'ret' || tool === 'elipse') e = { id: uid(), t: tool, x: p0.x, y: p0.y, w: 1, h: 1 };
+    else if (tool === 'retArred') e = { id: uid(), t: 'ret', arred: '1', x: p0.x, y: p0.y, w: 1, h: 1 };   // caixa com bordas arredondadas
     else if (tool === 'sim') {
         const forma = Ed.forma[id], def = SIMBOLOS[forma]; if (!def) return;
         const tr = TXT_SIMBOLO[def.txt] || [];

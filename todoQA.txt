@@ -54,6 +54,8 @@ Atualizado em 12/11/2026 (versão 4).
 18 [resolvido 12/11/2026] Editor de figuras: ferramenta ⬚ "Selecionar área" (como no Paint) — marca, arrasta a parte da imagem
    e os elementos de dentro; Delete apaga a área (branco); Esc solta; Ctrl+Z desfaz (o desfazer guarda também a imagem).
 19 [resolvido 12/11/2026] Baixar um documento só pelo menu ▾ ao lado de "⬇ 8 documentos" (além dos botões de cada página).
+20 [resolvido 12/11/2026] Editor de figuras: caixa com bordas arredondadas (▢) na barra de acesso rápido; o retângulo
+   ganhou a opção "Cantos: retos / arredondados" no painel.
 2 [futuro] Ampliar o catálogo IPC/CPC (hoje ~80 classes, foco em agro, eletrônica e controle).
 3 [futuro] Ler PDF direto como fonte (hoje: copiar e colar o texto).
 4 [futuro] Nuvem da equipe (MEGA), como no Projeto Conceitual, com senha e dados resguardados.
