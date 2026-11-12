@@ -178,7 +178,7 @@ function verificar(p) {
     // universidade
     const inv = p.universidade ? p.universidade.inventores : [];
     if (!inv.length) add('aviso', 'inventores', 'Cadastre os inventores (dados completos vão para os formulários da universidade).');
-    const soma = inv.reduce((s, x) => s + (Number(String(x.percentual).replace(',', '.')) || 0), 0);
+    const soma = inv.concat(p.universidade ? p.universidade.colaboradores : []).reduce((s, x) => s + (Number(String(x.percentual).replace(',', '.')) || 0), 0);   // inventores + colaboradores dividem a quota
     if (inv.length && Math.abs(soma - 100) > 0.01) add('aviso', 'inventores', `A participação nos resultados soma ${soma}% (precisa dar 100%).`);
     // prazos
     const div = p.contexto.divulgacoes.filter(d => d.data).sort((a, b) => a.data.localeCompare(b.data))[0];
