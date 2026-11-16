@@ -56,6 +56,9 @@ Atualizado em 12/11/2026 (versão 4).
 19 [resolvido 12/11/2026] Baixar um documento só pelo menu ▾ ao lado de "⬇ 8 documentos" (além dos botões de cada página).
 20 [resolvido 12/11/2026] Editor de figuras: caixa com bordas arredondadas (▢) na barra de acesso rápido; o retângulo
    ganhou a opção "Cantos: retos / arredondados" no painel.
+21 [resolvido 16/11/2026] Buscas → "⬇ Exportar a busca (.json)": estratégia (palavras-chave, classes, bases, depositantes,
+   características C1…), registro por base, documentos e análise no formato "apoio-escrita-patentes-busca", sem dados
+   pessoais. A Gestão de Projetos importa esse JSON na aba Pesquisa; o próprio app relê o arquivo no passo 3.
 2 [futuro] Ampliar o catálogo IPC/CPC (hoje ~80 classes, foco em agro, eletrônica e controle).
 3 [futuro] Ler PDF direto como fonte (hoje: copiar e colar o texto).
 4 [futuro] Nuvem da equipe (MEGA), como no Projeto Conceitual, com senha e dados resguardados.

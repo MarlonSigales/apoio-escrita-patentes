@@ -328,6 +328,46 @@ function lerRetornoJSON(texto) {
     };
 }
 
+/**
+ * Exporta a busca feita no mesmo formato do retorno ("apoio-escrita-patentes-busca"), com a estratégia junto.
+ * Serve para levar a busca para a seção Pesquisa do sistema de Gestão de Projetos (e para reabrir aqui).
+ * Só conteúdo técnico: nada de dados pessoais dos inventores.
+ */
+function exportarBuscaJSON(p) {
+    const b = p.busca, u = p.universidade, buscas = gerarBuscas(p);
+    const nomeBase = k => (BASES[k] ? BASES[k].nome : k || '');
+    const registro = [];
+    for (const [id, e] of Object.entries(b.executadas || {})) {
+        if (!e || !e.feita) continue;
+        const x = buscas.find(y => y.id === id) || {};
+        registro.push({ base: x.base || e.base || 'outra', estrategia: x.est || '', consulta: String(e.consulta || x.consulta || ''), resultados: e.n === '' || e.n == null ? '' : Number(e.n), triados: e.triados === '' || e.triados == null ? '' : Number(e.triados), acessada: true, data: e.data || '', obs: '' });
+    }
+    for (const r of b.registroColado) if (!registro.some(x => x.base === r.base && x.consulta === r.consulta)) registro.push({ base: r.base || 'outra', estrategia: r.est || r.estrategia || '', consulta: r.consulta, resultados: r.n === '' || r.n == null ? '' : Number(r.n), triados: r.triados === '' || r.triados == null ? '' : Number(r.triados), acessada: r.acessada !== false, data: r.data || '', obs: r.obs || '' });
+    const situacaoDe = r => r.situacao || (String(r.nota || '').match(/Situa[cç][aã]o:\s*([^·]+)/i) || [, ''])[1].trim();
+    const documentos = b.resultados.filter(r => r.num || r.titulo).sort((a, c) => (c.relevancia || 0) - (a.relevancia || 0)).map(r => ({
+        numero: r.num || '', titulo: r.titulo || '', depositante: r.depositante || '', prioridade: r.prioridade || '', publicacao: r.publicacao || '', pais: r.pais || (String(r.num || '').match(/^[A-Z]{2}/) || [''])[0],
+        situacao: situacaoDe(r) || 'não verificada', link: r.link || '', base: baseJSON(r.base) || r.base || '', tipo: r.tipoDoc || 'Patente ou MU', categoria: r.categoria || 'A', relevancia: Number(r.relevancia) || 3,
+        lido: r.lido || 'resumo', diferenca: String(r.nota || '').replace(/\s*·?\s*Situa[cç][aã]o:[^·]*/i, '').trim(), caracteristicas: r.carac || {}
+    }));
+    const datas = registro.map(r => r.data).filter(Boolean).sort();
+    const bases = [...new Set([...registro.map(r => r.base), ...b.resultados.flatMap(r => String(r.base || '').split(/\s*,\s*/))].filter(Boolean).map(x => { const k = baseJSON(x); return k && k !== 'outra' ? nomeBase(k) : x; }))];
+    return {
+        formato: FORMATO_BUSCA, versao: 1, origem: 'Apoio à Escrita de Patentes', exportado_em: hojeISO(),
+        titulo_pedido: tituloPedido(p), natureza: p.natureza || '',
+        data_busca: b.analise.data || datas[datas.length - 1] || hojeISO(),
+        estrategia: {
+            objetivo: `Busca de anterioridade para o pedido de ${nomeNatureza(p).toLowerCase()} "${tituloPedido(p)}"`,
+            palavras_chave: [...new Set(Object.values(b.termos).flatMap(listaTermos))],
+            classificacao: classesBusca(p), bases, depositantes: listaTermos(b.depositantes),
+            caracteristicas: caracteristicasComparacao(p).map((c, i) => ({ codigo: 'C' + (i + 1), texto: c }))
+        },
+        registro, documentos,
+        anterioridades_encontradas: u.buscaResultado ? u.buscaResultado === 'Sim' : documentos.some(d => d.categoria === 'X' || d.categoria === 'Y'),
+        nota_explicativa: b.notaRetorno || u.notaBusca || '',
+        diferenciais: b.analise.diferenciais || [], ameacas: b.analise.ameacas || [], lacunas: b.analise.lacunas || [], recomendacoes: b.analise.recomendacoes || [], alerta_prazos: b.analise.prazos || ''
+    };
+}
+
 /** Depositantes que são empresas (deixa de fora universidades, institutos e pessoas físicas). */
 function ehEmpresa(nome, sozinho = true) {
     const n = String(nome || '').trim();

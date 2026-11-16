@@ -472,6 +472,12 @@ const ACOES = {
     'add-registro'() { App.p.busca.registroColado.push({ id: uid(), base: 'inpi', consulta: '', n: '', triados: '' }); mudou(); },
     'copiar-converter-pdf'() { copiarTexto(promptConverterBusca(App.p)); avisar('Pedido copiado. Cole numa IA, anexe o PDF da busca e traga o JSON de volta para este campo.', 'ok', 6000); },
     'copiar-prompt-relatorio'() { copiarTexto(promptMelhorarRelatorio(App.p)); },
+    'exportar-busca'() {
+        const o = exportarBuscaJSON(App.p);
+        if (!o.documentos.length && !o.registro.length) return avisar('Ainda não há busca para exportar: importe o retorno ou adicione documentos.', 'erro');
+        baixarArquivo(new Blob([JSON.stringify(o, null, 2)], { type: 'application/json' }), 'Busca de anterioridade - ' + nomePeloTitulo(App.p, 'json'));
+        avisar(`Busca exportada: ${o.documentos.length} documento(s) e ${o.registro.length} consulta(s). Na Gestão de Projetos: aba Pesquisa → "Importar busca do Apoio à Escrita de Patentes".`, 'ok', 8000);
+    },
     'copiar-prompt-ideia'() {
         if (palavras(App.p.ideia.texto) < 15 && !App.p.ideia.rodadas.length) return avisar('Conte a ideia antes (15 palavras ou mais).', 'erro');
         copiarTexto(promptIdeia(App.p)); avisar('Prompt copiado. Cole numa IA e traga o JSON de volta para o campo 2.', 'ok', 6000);

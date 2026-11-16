@@ -211,6 +211,15 @@ function ok(cond, nome) { RES.push([!!cond, nome]); }
       ok(q.busca.resultados.length === comNum.length && q.busca.resultados.every(r => comNum.some(x => mesmoDocumento(x.num, r.num))), 'importar relatório da busca: documentos (' + q.busca.resultados.length + '/' + comNum.length + ')');
       const lf = await lerDocumentoDocx(await gerarDocumento(ex, 'formbusca'), 'pedido'); const nAntes = q.busca.resultados.length; await aplicarDocumentoDocx(q, lf, 'completar');
       ok(lf.id === 'formbusca' && q.busca.resultados.length === nAntes && q.busca.registroColado.length > 0, 'importar formulário de busca sem duplicar documentos'); }
+    // exportar a busca (para a Gestão de Projetos) e reler no mesmo formato
+    { const ex = exemploPressao(); ex.universidade.inventores = [Object.assign(inventorVazio(), { nome: 'Pessoa Sigilo', cpf: '999.999.999-99' })];
+      const o = exportarBuscaJSON(ex), txt = JSON.stringify(o);
+      ok(o.formato === FORMATO_BUSCA && o.documentos.length === ex.busca.resultados.filter(r => r.num || r.titulo).length && o.registro.length >= ex.busca.registroColado.length, 'exportar busca: documentos e registro');
+      ok(o.estrategia.palavras_chave.length && o.estrategia.classificacao.length && o.estrategia.caracteristicas[0].codigo === 'C1', 'exportar busca: estratégia (palavras, classes, características)');
+      ok(!/Pessoa Sigilo|999\.999/.test(txt), 'exportar busca sem dados pessoais');
+      const r = lerRetornoJSON(txt);
+      ok(r && r.resultados.length === o.documentos.length && r.resultados.every(d => ex.busca.resultados.some(x => mesmoDocumento(x.num, d.num))), 'busca exportada é relida pelo próprio app');
+      const sem = o.documentos.find(d => /Situa/.test(d.diferenca)); ok(!sem, 'diferença sem a "Situação" repetida'); }
     for (const d of DOCUMENTOS) {
         const b = await gerarDocumento(p, d.id);
         const z = await JSZip.loadAsync(b);
