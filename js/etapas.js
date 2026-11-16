@@ -57,7 +57,7 @@ PAGINAS.inicio = {
             <button type="button" class="opcao" data-acao="importar-md"><b>⇪ Tenho o prompt da busca (.md)</b><span>Preenche ficha, termos, classes e buscas a partir do prompt de anterioridade.</span></button>
             <button type="button" class="opcao" data-acao="importar-docx"><b>📄 Tenho um pedido em Word</b><span>Lê Relatório, Reivindicações, Desenhos e Resumo (.docx) e preenche tudo.</span></button>
             <button type="button" class="opcao" data-acao="exemplo" data-ex="pressao"><b>🧪 Ver exemplo completo</b><span>Sistema de monitoramento de pressão para circuitos pneumáticos.</span></button>
-            <button type="button" class="opcao" data-acao="abrir"><b>📂 Continuar um pedido</b><span>Abra o JSON exportado antes (o arquivo com o título da patente) e siga de onde parou.</span></button>
+            <button type="button" class="opcao" data-acao="abrir"><b>📂 Continuar um pedido</b><span>Abra o JSON exportado antes (o arquivo com o título da patente) ou o pré-preenchimento gerado na Gestão de Projetos (💡 Ideias de patente) e siga de onde parou.</span></button>
             <button type="button" class="opcao" data-acao="novo"><b>🗑️ Começar do zero</b><span>Apaga tudo deste navegador e abre a ficha "Sua invenção" em branco.</span></button>
         </div></div>
         <div class="card cartao-importar" id="importar-docx"><h2>📥 Importar o pedido já feito em Word</h2>
